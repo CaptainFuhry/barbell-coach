@@ -232,13 +232,13 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 // CONFIGURATION
 // ═══════════════════════════════════════════
 const EXERCISE_CFG = {
-  'Barbell Bench Press':    {icon:'🏋️',cat:'upper',inc:2.5,color:'#ef4444',restSec:120},
-  'Close Grip Bench Press': {icon:'🏋️',cat:'upper',inc:2.5,color:'#f97316',restSec:90},
-  'Barbell Bicep Curl':     {icon:'💪',cat:'upper',inc:2.5,color:'#a855f7',restSec:60},
-  'Barbell Overhead Press': {icon:'⬆️',cat:'upper',inc:2.5,color:'#3b82f6',restSec:120},
-  'Barbell Bent Over Row':  {icon:'🔄',cat:'upper',inc:2.5,color:'#06b6d4',restSec:120},
-  'Barbell Back Squat':     {icon:'🦵',cat:'lower',inc:5.0,color:'#22c55e',restSec:180},
-  'Romanian Deadlift':      {icon:'⬇️',cat:'lower',inc:5.0,color:'#facc15',restSec:150},
+  'Barbell Bench Press':    {icon:'🏋️',cat:'upper',inc:5,color:'#ef4444',restSec:60},
+  'Close Grip Bench Press': {icon:'🏋️',cat:'upper',inc:5,color:'#f97316',restSec:60},
+  'Barbell Bicep Curl':     {icon:'💪',cat:'upper',inc:5,color:'#a855f7',restSec:60},
+  'Barbell Overhead Press': {icon:'⬆️',cat:'upper',inc:5,color:'#3b82f6',restSec:60},
+  'Barbell Bent Over Row':  {icon:'🔄',cat:'upper',inc:5,color:'#06b6d4',restSec:60},
+  'Barbell Back Squat':     {icon:'🦵',cat:'lower',inc:5,color:'#22c55e',restSec:60},
+  'Romanian Deadlift':      {icon:'⬇️',cat:'lower',inc:5,color:'#facc15',restSec:60},
   'Ab Wheel Rollouts':      {icon:'⭕',cat:'core',inc:0,  color:'#f472b6',restSec:60},
 };
 const ALL_EXERCISES = Object.keys(EXERCISE_CFG);
@@ -384,18 +384,6 @@ const SEED_SESSIONS = [
     {name:'Ab Wheel Rollouts',targetSets:3,targetReps:'8-10',sets:[
       {w:0,r:0,n:''},{w:0,r:0,n:''},{w:0,r:0,n:''}]},
   ]},
-  {id:'h8',date:'2026-08-28',type:'friday',label:'Friday',exercises:[
-    {name:'Barbell Bench Press',targetSets:3,targetReps:8,sets:[
-      {w:145,r:8,n:''},{w:145,r:8,n:''},{w:145,r:8,n:''}]},
-    {name:'Barbell Overhead Press',targetSets:3,targetReps:8,sets:[
-      {w:115,r:7,n:''},{w:105,r:7,n:'Better'},{w:105,r:7,n:''}]},
-    {name:'Barbell Bent Over Row',targetSets:3,targetReps:8,sets:[
-      {w:145,r:8,n:''},{w:145,r:8,n:''},{w:145,r:8,n:''}]},
-    {name:'Romanian Deadlift',targetSets:3,targetReps:10,sets:[
-      {w:175,r:8,n:''},{w:175,r:10,n:''},{w:175,r:10,n:''}]},
-    {name:'Ab Wheel Rollouts',targetSets:3,targetReps:'8-10',sets:[
-      {w:0,r:0,n:''},{w:0,r:0,n:''},{w:0,r:0,n:''}]},
-  ]},
 ];
 
 // ═══════════════════════════════════════════
@@ -404,6 +392,8 @@ const SEED_SESSIONS = [
 let S = {
   view: 'home',
   sessions: JSON.parse(JSON.stringify(SEED_SESSIONS)),
+  // Custom routine overrides {monday:[{name,sets,targetReps},...], friday:[...]}
+  customRoutines: {},
   // Workout state
   wkPhase: 'pick', // pick | active | done
   wkRoutine: null,
@@ -441,30 +431,41 @@ function sessionMaxWeight(sets){
 }
 
 // Progressive overload suggestion for an exercise
+// Requires STRICTLY exceeding target reps on all heavy sets in 3+ sessions before suggesting increase
+const OVERLOAD_SESSIONS_REQUIRED = 3;
 function getSuggestion(exName){
-  const inc=EXERCISE_CFG[exName]?.inc||2.5;
+  const inc=EXERCISE_CFG[exName]?.inc||5;
   if(isCore(exName))return{weight:0,note:'Bodyweight / reps focus',inc:false};
 
-  // Find most recent session with this exercise
-  const recent=[...S.sessions]
+  const relevant=[...S.sessions]
     .filter(s=>s.exercises.some(e=>e.name===exName))
     .sort((a,b)=>new Date(b.date)-new Date(a.date));
 
-  if(!recent.length)return{weight:0,note:'No history — enter starting weight',inc:false};
+  if(!relevant.length)return{weight:0,note:'No history — enter starting weight',inc:false};
 
-  const lastEx=recent[0].exercises.find(e=>e.name===exName);
+  const lastEx=relevant[0].exercises.find(e=>e.name===exName);
   const lastSets=lastEx.sets.filter(s=>s.w>0||s.r>0);
   if(!lastSets.length)return{weight:0,note:'No weight logged previously',inc:false};
 
-  const targetReps=typeof lastEx.targetReps==='string'?8:lastEx.targetReps;
   const maxW=sessionMaxWeight(lastSets);
-  const heavySets=lastSets.filter(s=>s.w===maxW);
-  const allCompleted=heavySets.every(s=>s.r>=targetReps);
 
-  if(allCompleted){
-    return{weight:maxW+inc,note:`+${inc} lbs from last session`,inc:true,lastW:maxW};
+  // Count sessions where ALL heavy sets went STRICTLY OVER target reps
+  let overCount=0;
+  for(const sess of relevant){
+    const ex=sess.exercises.find(e=>e.name===exName);
+    if(!ex)continue;
+    const sets=ex.sets.filter(s=>s.w>0||s.r>0);
+    if(!sets.length)continue;
+    const targetReps=typeof ex.targetReps==='string'?8:ex.targetReps;
+    const sessMaxW=sessionMaxWeight(sets);
+    const heavySets=sets.filter(s=>s.w===sessMaxW);
+    if(heavySets.length&&heavySets.every(s=>s.r>targetReps)) overCount++;
+  }
+
+  if(overCount>=OVERLOAD_SESSIONS_REQUIRED){
+    return{weight:maxW+inc,note:`+${inc} lbs — ${overCount} sessions over target ✓`,inc:true,lastW:maxW};
   }else{
-    return{weight:maxW,note:`Hold — missed reps at ${maxW} lbs`,inc:false,lastW:maxW};
+    return{weight:maxW,note:`Hold — ${overCount}/${OVERLOAD_SESSIONS_REQUIRED} sessions over target`,inc:false,lastW:maxW};
   }
 }
 
@@ -596,20 +597,26 @@ function fmtSec(s){const m=Math.floor(s/60);const sc=s%60;return`${m}:${sc.toStr
 // ═══════════════════════════════════════════
 // WORKOUT FLOW
 // ═══════════════════════════════════════════
+function getEffectiveRoutineExercises(routineKey){
+  // Returns array of {name, sets, targetReps} honoring custom overrides
+  if(S.customRoutines[routineKey]) return S.customRoutines[routineKey];
+  return ROUTINES[routineKey].exercises.map(e=>({name:e.name,sets:e.sets,targetReps:e.targetReps}));
+}
+
 function buildWorkoutSession(routineKey, customExList){
   let exercises;
   let label, type;
   if(routineKey==='adhoc'){
     type='adhoc'; label='Ad-hoc Session';
     exercises=customExList.map(name=>{
-      const cfg=EXERCISE_CFG[name]||{};
       const tr=isLower(name)?10:8;
       return{name,targetSets:3,targetReps:isCore(name)?'8-10':tr,sets:[]};
     });
   }else{
     const rt=ROUTINES[routineKey];
     type=routineKey; label=rt.label;
-    exercises=rt.exercises.map(e=>({name:e.name,targetSets:e.sets,targetReps:e.targetReps,sets:[]}));
+    const effEx=getEffectiveRoutineExercises(routineKey);
+    exercises=effEx.map(e=>({name:e.name,targetSets:e.sets,targetReps:e.targetReps,sets:[]}));
   }
   // Initialize sets
   for(const ex of exercises){
@@ -812,7 +819,7 @@ function numInput(val,onDec,onInc,onChange,label,step){
   return`<div class="num-col">
     <div class="num-input-wrap">
       <button class="num-adj" onclick="${onDec}">−</button>
-      <input class="num-field" type="number" value="${val||''}" min="0" step="${step||2.5}"
+      <input class="num-field" type="number" value="${val||''}" min="0" step="${step||5}"
         oninput="${onChange}" onblur="${onChange}">
       <button class="num-adj" onclick="${onInc}">+</button>
     </div>
@@ -946,20 +953,19 @@ function renderRoutinePick(){
     <div style="font-size:13px;color:var(--t3);margin-bottom:16px">Choose your routine</div>`;
 
   for(const[key,rt] of Object.entries(ROUTINES)){
-    const sug=rt.exercises.map(e=>{
-      const s=getSuggestion(e.name);
-      return`${e.name.replace('Barbell ','').replace(' Press','P')}: ${s.weight||'?'}lbs`;
-    }).join(' · ');
+    const effEx=getEffectiveRoutineExercises(key);
+    const isCustomized=!!S.customRoutines[key];
     html+=`
     <div class="routine-card" onclick="startWorkout('${key}')">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
         <span style="font-size:22px">${rt.emoji}</span>
-        <div>
-          <div class="routine-title">${rt.label}</div>
-          <div style="font-size:11px;color:var(--t3)">${rt.exercises.length} exercises</div>
+        <div style="flex:1">
+          <div class="routine-title">${rt.label}${isCustomized?'<span style="font-size:11px;color:var(--orange);font-weight:500;margin-left:6px">✏️ customized</span>':''}</div>
+          <div style="font-size:11px;color:var(--t3)">${effEx.length} exercises</div>
         </div>
+        <button class="btn btn-outline btn-sm" style="flex-shrink:0" onclick="event.stopPropagation();editRoutine('${key}')">✏️ Edit</button>
       </div>
-      <div class="routine-exercises">${rt.exercises.map(e=>`${exIcon(e.name)} ${e.name.replace('Barbell ','')}&nbsp;${e.sets}×${e.targetReps}`).join('&nbsp;&nbsp;')}</div>
+      <div class="routine-exercises">${effEx.map(e=>`${exIcon(e.name)} ${e.name.replace('Barbell ','')}&nbsp;${e.sets}×${e.targetReps}`).join('&nbsp;&nbsp;')}</div>
     </div>`;
   }
 
@@ -1014,6 +1020,104 @@ function toggleCustomEx(name){
   if(idx>=0)S.wkCustomExercises.splice(idx,1);
   else S.wkCustomExercises.push(name);
   renderExPicker();
+}
+
+// ─── Routine editor ────────────────────────────────────────
+function editRoutine(routineKey){
+  const rt=ROUTINES[routineKey];
+  const current=getEffectiveRoutineExercises(routineKey);
+  const currentNames=current.map(e=>e.name);
+
+  // Build a lookup for sets/reps: prefer original routine defaults, then use global defaults
+  const defaults={};
+  rt.exercises.forEach(e=>defaults[e.name]={sets:e.sets,targetReps:e.targetReps});
+
+  let selected=[...currentNames];
+
+  function renderModal(){
+    const existing=document.getElementById('edit-routine-modal');
+    if(existing)existing.remove();
+    const modal=document.createElement('div');
+    modal.className='modal';
+    modal.id='edit-routine-modal';
+    let items='';
+    for(const name of ALL_EXERCISES){
+      const sel=selected.includes(name);
+      items+=`<div class="ex-picker-item${sel?' selected':''}" onclick="toggleRoutineEx(this,'${name}')">
+        <div class="ex-picker-check">${sel?'✓':''}</div>
+        <div style="font-size:18px">${exIcon(name)}</div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:600">${name}</div>
+          <div style="font-size:11px;color:var(--t3)">${EXERCISE_CFG[name].cat}</div>
+        </div>
+      </div>`;
+    }
+    modal.innerHTML=`
+      <div class="modal-sheet">
+        <div class="sheet-handle"></div>
+        <div class="modal-title">✏️ Edit ${rt.label}</div>
+        <p style="font-size:12px;color:var(--t3);text-align:center;margin-bottom:12px">Select exercises for this routine</p>
+        <div id="routine-ex-list">${items}</div>
+        <div style="display:flex;gap:8px;margin-top:14px">
+          ${S.customRoutines[routineKey]?`<button class="btn btn-outline btn-sm" onclick="resetRoutine('${routineKey}')">↺ Reset</button>`:''}
+          <button class="btn btn-muted" style="flex:1" onclick="closeModal('edit-routine-modal')">Cancel</button>
+          <button class="btn btn-primary" style="flex:1" onclick="saveRoutine('${routineKey}')">Save</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click',e=>{if(e.target===modal)closeModal('edit-routine-modal');});
+    // Store selection in closure via data attr
+    modal.dataset.selected=JSON.stringify(selected);
+  }
+
+  // Expose toggle to global scope for inline onclick
+  window._editRoutineKey=routineKey;
+  window._editRoutineDefaults=defaults;
+  renderModal();
+}
+
+function toggleRoutineEx(el,name){
+  const modal=document.getElementById('edit-routine-modal');
+  if(!modal)return;
+  let selected=JSON.parse(modal.dataset.selected||'[]');
+  const idx=selected.indexOf(name);
+  if(idx>=0) selected.splice(idx,1);
+  else selected.push(name);
+  modal.dataset.selected=JSON.stringify(selected);
+  // Update UI
+  el.classList.toggle('selected');
+  el.querySelector('.ex-picker-check').textContent=selected.includes(name)?'✓':'';
+}
+
+function saveRoutine(routineKey){
+  const modal=document.getElementById('edit-routine-modal');
+  if(!modal)return;
+  const selected=JSON.parse(modal.dataset.selected||'[]');
+  if(!selected.length){showToast('Select at least one exercise');return;}
+  const rt=ROUTINES[routineKey];
+  const defaults=window._editRoutineDefaults||{};
+  // Build exercise list preserving original sets/reps where possible
+  const exList=selected.map(name=>{
+    const orig=defaults[name]||{};
+    return{
+      name,
+      sets:orig.sets||3,
+      targetReps:orig.targetReps||(isCore(name)?'8-10':isLower(name)?10:8)
+    };
+  });
+  S.customRoutines[routineKey]=exList;
+  persist();
+  closeModal('edit-routine-modal');
+  showToast('✅ Routine saved');
+  renderRoutinePick();
+}
+
+function resetRoutine(routineKey){
+  delete S.customRoutines[routineKey];
+  persist();
+  closeModal('edit-routine-modal');
+  showToast('↺ Routine reset to default');
+  renderRoutinePick();
 }
 
 function renderActiveWorkout(){
@@ -1082,11 +1186,11 @@ function renderActiveWorkout(){
               `<div style="flex:1;display:flex;gap:8px;align-items:center">
                 <div class="num-col">
                   <div class="num-input-wrap">
-                    <button class="num-adj" onclick="adjField(${exIdx},${setIdx},'w',-2.5)">−</button>
-                    <input class="num-field" type="number" value="${set.w||''}" min="0" step="2.5"
+                    <button class="num-adj" onclick="adjField(${exIdx},${setIdx},'w',-5)">−</button>
+                    <input class="num-field" type="number" value="${set.w||''}" min="0" step="5"
                       oninput="updateSet(${exIdx},${setIdx},'w',+this.value)"
                       onblur="updateSet(${exIdx},${setIdx},'w',+this.value)">
-                    <button class="num-adj" onclick="adjField(${exIdx},${setIdx},'w',2.5)">+</button>
+                    <button class="num-adj" onclick="adjField(${exIdx},${setIdx},'w',5)">+</button>
                   </div>
                   <div class="num-label">lbs</div>
                 </div>
@@ -1129,7 +1233,7 @@ function renderActiveWorkout(){
 function adjField(exIdx,setIdx,field,delta){
   const set=S.wkSession.exercises[exIdx].sets[setIdx];
   const cur=+(set[field])||0;
-  const step=field==='r'?1:2.5;
+  const step=field==='r'?1:5;
   set[field]=Math.max(0,+(cur+delta).toFixed(1));
   renderActiveWorkout();
 }
@@ -1227,7 +1331,11 @@ function renderHistory(){
             ${totalVol>0?`<span class="badge badge-purple">${Math.round(totalVol/1000*10)/10}K lbs volume</span>`:''}
           </div>
         </div>
-        <span class="ex-chevron" style="font-size:12px;color:var(--t4)">▼</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <button class="btn-icon" style="font-size:14px;color:var(--accent);border-color:rgba(239,68,68,0.3)"
+            onclick="event.stopPropagation();confirmDeleteSession('${sess.id}','${sess.label}','${fmtDate(sess.date)}')">🗑️</button>
+          <span class="ex-chevron" style="font-size:12px;color:var(--t4)">▼</span>
+        </div>
       </div>
       <div class="hist-body">
         ${sess.exercises.map(ex=>{
@@ -1255,6 +1363,39 @@ function renderHistory(){
 }
 
 function toggleHist(id){S.histOpen[id]=!S.histOpen[id];renderHistory();}
+
+function confirmDeleteSession(id,label,dateStr){
+  const existing=document.getElementById('delete-modal');
+  if(existing)existing.remove();
+  const modal=document.createElement('div');
+  modal.className='modal';
+  modal.id='delete-modal';
+  modal.innerHTML=`
+    <div class="modal-sheet" style="text-align:center">
+      <div class="sheet-handle"></div>
+      <div style="font-size:32px;margin-bottom:8px">🗑️</div>
+      <div class="modal-title" style="margin-bottom:8px">Delete Session?</div>
+      <p style="font-size:13px;color:var(--t3);margin-bottom:20px;line-height:1.5">
+        <strong style="color:var(--t1)">${label}</strong><br>${dateStr}<br>
+        <span style="font-size:12px">This cannot be undone.</span>
+      </p>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-muted" style="flex:1" onclick="closeModal('delete-modal')">Cancel</button>
+        <button class="btn btn-primary" style="flex:1;background:#dc2626" onclick="deleteSession('${id}')">Delete</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click',e=>{if(e.target===modal)closeModal('delete-modal');});
+}
+
+function deleteSession(id){
+  S.sessions=S.sessions.filter(s=>s.id!==id);
+  delete S.histOpen[id];
+  persist();
+  closeModal('delete-modal');
+  showToast('🗑️ Session deleted');
+  renderHistory();
+}
 
 function copyHistSummary(id){
   const sess=S.sessions.find(s=>s.id===id);
@@ -1342,7 +1483,7 @@ function lsAvailable(){
 function persist(){
   if(!lsAvailable())return;
   try{
-    localStorage.setItem(LS_KEY, JSON.stringify({v:2, sessions:S.sessions, saved:new Date().toISOString()}));
+    localStorage.setItem(LS_KEY, JSON.stringify({v:2, sessions:S.sessions, customRoutines:S.customRoutines, saved:new Date().toISOString()}));
   }catch(e){/* quota exceeded — silently ignore */}
 }
 
@@ -1354,6 +1495,7 @@ function loadFromStorage(){
     const obj=JSON.parse(raw);
     if(obj.sessions&&Array.isArray(obj.sessions)&&obj.sessions.length){
       S.sessions=obj.sessions;
+      if(obj.customRoutines)S.customRoutines=obj.customRoutines;
       return true;
     }
   }catch(e){}
