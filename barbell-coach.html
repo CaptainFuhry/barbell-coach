@@ -161,6 +161,12 @@ body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,
 .chip-pr{background:#451a03;color:#f59e0b}
 .section-title{font-size:.75rem;text-transform:uppercase;letter-spacing:.07em;
   color:#475569;font-weight:700;padding:14px 0 7px}
+/* Progress tab */
+.prog-detail-body{padding:12px 0 4px}
+.prog-metric{background:#0f0f1a;border-radius:8px;padding:10px;text-align:center}
+.pm-val{font-size:1.1rem;font-weight:700;color:#818cf8}
+.pm-lbl{font-size:.68rem;color:#475569;margin-top:2px}
+.trend-up{color:#4ade80}.trend-down{color:#f87171}.trend-neutral{color:#64748b}
 @keyframes prGlow{0%,100%{background:#0f0f1a}50%{background:#451a03}}
 .pr-flash{animation:prGlow 1.2s ease 3}
 ::-webkit-scrollbar{width:3px}
@@ -377,6 +383,7 @@ let S = {
   timerInterval: null,
   histOpen: {},
   exOpen: {},
+  progressOpen: {},
   pendingDelSession: null,
   pendingDelEx: null,
   addExTarget: 'workout', // 'workout' | 'routine'
@@ -561,6 +568,8 @@ function render() {
     content = renderHistory();
   } else if (S.view === 'settings') {
     content = renderSettings();
+  } else if (S.view === 'progress') {
+    content = renderProgress();
   } else {
     content = renderHome();
   }
@@ -572,6 +581,9 @@ function render() {
       </button>
       <button class="nav-item ${S.view==='history'?'active':''}" onclick="nav('history')">
         <span class="ni">📋</span>History
+      </button>
+      <button class="nav-item ${S.view==='progress'?'active':''}" onclick="nav('progress')">
+        <span class="ni">📈</span>Progress
       </button>
       <button class="nav-item ${S.view==='settings'?'active':''}" onclick="nav('settings')">
         <span class="ni">⚙️</span>Settings
@@ -1272,6 +1284,189 @@ function renderModals() {
       </div>
     </div>
   `;
+}
+
+// ── PROGRESS ──────────────────────────────────────────────────────────────────
+function getExerciseStats(exName) {
+  return S.sessions
+    .filter(s => s.exercises.some(e => e.name === exName))
+    .sort((a,b) => new Date(a.date) - new Date(b.date)) // oldest → newest for chart
+    .map(sess => {
+      const ex = sess.exercises.find(e => e.name === exName);
+      const validSets = ex.sets.filter(s => s.w > 0 || s.r > 0);
+      const volume = validSets.reduce((sum, s) => sum + (s.w||0)*(s.r||0), 0);
+      const maxW = sessMaxW(validSets);
+      const heavySets = validSets.filter(s => s.w === maxW && s.r > 0);
+      const avgReps = heavySets.length
+        ? Math.round(heavySets.reduce((a,s)=>a+s.r,0)/heavySets.length) : 0;
+      const est1RM = isCore(exName) ? 0 : validSets.reduce((best, s) => {
+        const rm = s.w > 0 && s.r > 0 ? epley1RM(s.w, s.r) : 0;
+        return Math.max(best, rm);
+      }, 0);
+      return {
+        date: sess.date,
+        volume,
+        maxW,
+        avgReps,
+        est1RM: Math.round(est1RM * 10) / 10,
+        totalSets: validSets.length
+      };
+    });
+}
+
+function makeSvgSparkline(values, color) {
+  if (values.length < 2) return '';
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const W = 200, H = 48, PAD = 6;
+  const gradId = 'sg' + Math.abs(color.split('').reduce((a,c)=>a+c.charCodeAt(0),0));
+  const pts = values.map((v, i) => {
+    const x = PAD + (i / (values.length - 1)) * (W - PAD * 2);
+    const y = H - PAD - ((v - min) / range) * (H - PAD * 2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const polyPts = pts.join(' ');
+  const areaFirst = `${PAD},${H - PAD}`;
+  const areaLast = `${(PAD + (W - PAD * 2)).toFixed(1)},${H - PAD}`;
+  const lastPt = pts[pts.length - 1].split(',');
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:48px;display:block">
+    <defs>
+      <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${color}" stop-opacity="0.35"/>
+        <stop offset="100%" stop-color="${color}" stop-opacity="0.03"/>
+      </linearGradient>
+    </defs>
+    <polygon points="${areaFirst} ${polyPts} ${areaLast}" fill="url(#${gradId})"/>
+    <polyline points="${polyPts}" fill="none" stroke="${color}" stroke-width="2"
+      stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="3.5" fill="${color}"/>
+  </svg>`;
+}
+
+function renderProgress() {
+  const exercisesWithHistory = ALL_EXERCISES.filter(name =>
+    S.sessions.some(s => s.exercises.some(e =>
+      e.name === name && e.sets.some(st => st.w > 0 || st.r > 0)
+    ))
+  );
+
+  if (!exercisesWithHistory.length) {
+    return `<div class="screen-inner">
+      <div class="page-hdr"><div class="page-title">📈 Progress</div></div>
+      <div style="color:#475569;text-align:center;padding:40px">Complete a workout to see your progress</div>
+    </div>`;
+  }
+
+  const cats = {upper:'Upper Body', lower:'Lower Body', core:'Core'};
+
+  const cardsHTML = Object.entries(cats).map(([cat, catLabel]) => {
+    const exInCat = exercisesWithHistory.filter(n => cfg(n).cat === cat);
+    if (!exInCat.length) return '';
+
+    return `<div class="section-title">${catLabel}</div>` + exInCat.map(name => {
+      const c = cfg(name);
+      const stats = getExerciseStats(name);
+      if (!stats.length) return '';
+      const isOpen = S.progressOpen[name];
+      const last = stats[stats.length - 1];
+
+      // Trend: compare last to avg of previous 1-3 sessions
+      let trendIcon = '→', trendCls = 'trend-neutral';
+      if (stats.length >= 2) {
+        const prior = stats.slice(-4, -1);
+        const priorKey = d => isCore(name) ? d.volume : d.est1RM;
+        const priorAvg = prior.length
+          ? prior.reduce((s,d)=>s+priorKey(d),0)/prior.length : 0;
+        const lastVal = isCore(name) ? last.volume : last.est1RM;
+        if (priorAvg > 0) {
+          const pct = (lastVal - priorAvg) / priorAvg;
+          if (pct > 0.02) { trendIcon = '↑'; trendCls = 'trend-up'; }
+          else if (pct < -0.02) { trendIcon = '↓'; trendCls = 'trend-down'; }
+        }
+      }
+
+      const summaryText = isCore(name)
+        ? `${last.totalSets} sets · Vol ${last.volume}`
+        : `${last.maxW} lbs · est. 1RM ~${last.est1RM} lbs`;
+
+      let expandedHTML = '';
+      if (isOpen) {
+        const recent5 = stats.slice(-5);
+        const avgVol = Math.round(recent5.reduce((s,d)=>s+d.volume,0)/recent5.length);
+        const avg1RM = Math.round(recent5.reduce((s,d)=>s+d.est1RM,0)/recent5.length * 10)/10;
+        const peakEst1RM = isCore(name) ? 0 : Math.max(...stats.map(d=>d.est1RM));
+        const peakVol = Math.max(...stats.map(d=>d.volume));
+
+        const sparkValues = stats.map(d => isCore(name) ? d.volume : d.est1RM);
+        const sparkline = makeSvgSparkline(sparkValues, c.color);
+
+        const recentRows = stats.slice(-8).reverse().map(d => `
+          <div style="display:flex;gap:6px;align-items:center;padding:5px 0;border-bottom:1px solid #1e2a3a;font-size:.77rem">
+            <span style="color:#475569;min-width:64px;flex-shrink:0">${fmtDate(d.date).replace(/[A-Za-z]+,\s/,'')}</span>
+            ${isCore(name)
+              ? `<span style="color:#94a3b8;flex:1">${d.totalSets} sets</span>`
+              : `<span style="color:#94a3b8;flex:1">${d.maxW} lbs × ${d.avgReps} reps</span>
+                 <span style="color:#64748b;margin-right:4px">~${d.est1RM}</span>`}
+            <span style="color:#6366f1">Vol&nbsp;${d.volume}</span>
+          </div>`).join('');
+
+        expandedHTML = `<div class="prog-detail-body">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px">
+            ${isCore(name) ? `
+              <div class="prog-metric"><div class="pm-val">${last.avgReps}</div><div class="pm-lbl">Last Avg Reps</div></div>
+              <div class="prog-metric"><div class="pm-val">${last.volume}</div><div class="pm-lbl">Last Volume</div></div>
+              <div class="prog-metric"><div class="pm-val">${peakVol}</div><div class="pm-lbl">Peak Volume</div></div>
+            ` : `
+              <div class="prog-metric"><div class="pm-val">${last.maxW}</div><div class="pm-lbl">Weight (lbs)</div></div>
+              <div class="prog-metric"><div class="pm-val">${last.est1RM}</div><div class="pm-lbl">Est. 1RM</div></div>
+              <div class="prog-metric"><div class="pm-val">${peakEst1RM}</div><div class="pm-lbl">Peak 1RM</div></div>
+            `}
+          </div>
+          ${sparkline ? `<div style="margin-bottom:12px">
+            <div style="font-size:.7rem;color:#475569;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">${isCore(name)?'Volume':'Est. 1RM'} progression</div>
+            <div style="background:#0f0f1a;border-radius:8px;padding:6px 8px">${sparkline}</div>
+          </div>` : ''}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">
+            <div class="prog-metric"><div class="pm-val">${avgVol}</div><div class="pm-lbl">Avg Vol/Session (×5)</div></div>
+            ${isCore(name)
+              ? `<div class="prog-metric"><div class="pm-val">${stats.length}</div><div class="pm-lbl">Total Sessions</div></div>`
+              : `<div class="prog-metric"><div class="pm-val">${avg1RM}</div><div class="pm-lbl">Avg 1RM (×5)</div></div>`}
+          </div>
+          <div style="font-size:.7rem;color:#475569;margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em">Recent Sessions</div>
+          ${recentRows}
+          <div style="font-size:.72rem;color:#475569;margin-top:8px;text-align:center">${stats.length} sessions total</div>
+        </div>`;
+      }
+
+      return `<div class="ex-card">
+        <div class="ex-card-hdr${isOpen?' open':''}" style="--c:${c.color}"
+          onclick="toggleProgress('${name.replace(/'/g,"\\'")}')">
+          <span style="font-size:1.1rem">${c.icon}</span>
+          <div style="flex:1;min-width:0">
+            <div class="ex-name">${name}</div>
+            <div class="ex-sug">${summaryText}</div>
+          </div>
+          <span class="${trendCls}" style="font-size:1.15rem;font-weight:700;margin-right:6px">${trendIcon}</span>
+          <span class="chev">▾</span>
+        </div>
+        ${isOpen ? `<div class="ex-card-body open">${expandedHTML}</div>` : ''}
+      </div>`;
+    }).join('');
+  }).join('');
+
+  return `<div class="screen-inner">
+    <div class="page-hdr">
+      <div class="page-title">📈 Progress</div>
+      <span style="color:#64748b;font-size:.82rem">${exercisesWithHistory.length} exercises</span>
+    </div>
+    ${cardsHTML}
+  </div>`;
+}
+
+function toggleProgress(name) {
+  S.progressOpen[name] = !S.progressOpen[name];
+  render();
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
