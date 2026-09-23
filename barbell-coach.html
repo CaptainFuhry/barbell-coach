@@ -159,6 +159,7 @@ body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,
 .chip-up{background:#14532d;color:#4ade80}
 .chip-hold{background:#1e293b;color:#64748b}
 .chip-pr{background:#451a03;color:#f59e0b}
+.chip-missed{background:#1a1a3e;color:#818cf8;border:1px solid #3730a3}
 .section-title{font-size:.75rem;text-transform:uppercase;letter-spacing:.07em;
   color:#475569;font-weight:700;padding:14px 0 7px}
 /* Progress tab */
@@ -186,7 +187,10 @@ input[type=number]{-moz-appearance:textfield}
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const LS_KEY = 'barbell-coach-v2';
-const OVERLOAD_SESSIONS = 3; // sessions strictly over target needed
+// Progressive overload: need OVERLOAD_SESSIONS sessions AT OR ABOVE target reps
+// within the last LOOK_BACK sessions for this exercise.
+const OVERLOAD_SESSIONS = 2;
+const LOOK_BACK = 5;
 const REST_SEC = 60;
 
 const EXERCISE_CFG = {
@@ -213,8 +217,8 @@ const DEFAULT_ROUTINE = [
   {name:'Close Grip Bench Press',      sets:2, targetReps:10},
   {name:'Barbell Skull Crushers',      sets:3, targetReps:10},
   {name:'Barbell Bicep Curl',          sets:2, targetReps:10},
-  {name:'Barbell Overhead Press',      sets:3, targetReps:8},
   {name:'Barbell Bent Over Row',       sets:3, targetReps:8},
+  {name:'Barbell Overhead Press',      sets:3, targetReps:8},
   {name:'Barbell Back Squat',          sets:3, targetReps:8},
   {name:'Romanian Deadlift',           sets:3, targetReps:10},
   {name:'Barbell Hip Thrust',          sets:3, targetReps:10},
@@ -223,6 +227,24 @@ const DEFAULT_ROUTINE = [
 
 // ── SEED SESSIONS ─────────────────────────────────────────────────────────────
 const SEED_SESSIONS = [
+  {id:'s17901608153900i2w',date:'2026-09-23',type:'default',label:'Full Body',startTime:1790160815390,notes:'',exercises:[
+    {name:'Barbell Bench Press',        targetSets:3,targetReps:8, sets:[{w:145,r:10,n:''},{w:145,r:10,n:''}]},
+    {name:'Incline Barbell Bench Press',targetSets:3,targetReps:8, sets:[{w:95,r:8,n:''},{w:115,r:8,n:''},{w:115,r:9,n:''}]},
+    {name:'Close Grip Bench Press',     targetSets:2,targetReps:10,sets:[{w:115,r:10,n:''},{w:115,r:10,n:''}]},
+    {name:'Barbell Skull Crushers',     targetSets:3,targetReps:10,sets:[{w:40,r:10,n:''},{w:50,r:8,n:''},{w:50,r:8,n:''}]},
+    {name:'Barbell Bicep Curl',         targetSets:2,targetReps:10,sets:[{w:80,r:8,n:''},{w:80,r:7,n:''}]},
+    {name:'Barbell Bent Over Row',      targetSets:3,targetReps:8, sets:[{w:155,r:10,n:''},{w:155,r:10,n:''}]},
+    {name:'Barbell Overhead Press',     targetSets:3,targetReps:8, sets:[{w:105,r:10,n:''},{w:105,r:8,n:''}]},
+  ]},
+  {id:'s1789906854240nc20',date:'2026-09-20',type:'adhoc',label:'Ad-hoc Session',startTime:1789906854240,notes:'',exercises:[
+    {name:'Barbell Bench Press',     targetSets:3,targetReps:8, sets:[{w:145,r:8,n:''},{w:145,r:8,n:''},{w:145,r:8,n:''}]},
+    {name:'Close Grip Bench Press',  targetSets:3,targetReps:8, sets:[{w:115,r:12,n:''},{w:115,r:12,n:''},{w:115,r:0,n:''}]},
+    {name:'Barbell Bicep Curl',      targetSets:3,targetReps:8, sets:[{w:85,r:10,n:''},{w:85,r:8,n:''},{w:85,r:0,n:''}]},
+    {name:'Barbell Overhead Press',  targetSets:3,targetReps:8, sets:[{w:105,r:10,n:''},{w:105,r:10,n:''},{w:105,r:0,n:''}]},
+    {name:'Barbell Bent Over Row',   targetSets:3,targetReps:8, sets:[{w:155,r:0,n:''},{w:155,r:0,n:''},{w:155,r:0,n:''}]},
+    {name:'Barbell Back Squat',      targetSets:3,targetReps:10,sets:[{w:175,r:0,n:''},{w:175,r:0,n:''},{w:175,r:0,n:''}]},
+    {name:'Romanian Deadlift',       targetSets:3,targetReps:10,sets:[{w:185,r:0,n:''},{w:185,r:0,n:''},{w:185,r:0,n:''}]},
+  ]},
   {id:'s1789728791604bx21',date:'2026-09-18',type:'default',label:'Full Body',startTime:1789728791604,notes:'',exercises:[
     {name:'Barbell Bench Press',targetSets:3,targetReps:8,sets:[{w:145,r:9,n:''},{w:145,r:8,n:''},{w:145,r:9,n:''}]},
     {name:'Barbell Overhead Press',targetSets:3,targetReps:8,sets:[{w:105,r:8,n:''},{w:105,r:8,n:''},{w:105,r:7,n:''}]},
@@ -453,22 +475,38 @@ function getSuggestion(exName) {
   const lastSets = lastEx.sets.filter(s => s.w > 0 || s.r > 0);
   if (!lastSets.length) return {weight:0, note:'No weight logged yet', inc:false};
   const maxW = sessMaxW(lastSets);
-  let overCount = 0;
-  for (const sess of rel) {
+  // Double progression: count qualifying sessions within the last LOOK_BACK sessions.
+  // A session qualifies when ALL sets at the max weight hit or exceed the target reps (≥).
+  const window = rel.slice(0, LOOK_BACK);
+  let qualCount = 0;
+  let targetRepsRef = 8; // reference for messaging
+  for (const sess of window) {
     const ex = sess.exercises.find(e => e.name === exName);
     if (!ex) continue;
     const sets = ex.sets.filter(s => s.w > 0 || s.r > 0);
     if (!sets.length) continue;
     const tr = typeof ex.targetReps === 'string' ? 8 : (ex.targetReps || 8);
+    targetRepsRef = tr;
     const mw = sessMaxW(sets);
     if (!mw) continue;
     const heavy = sets.filter(s => s.w === mw);
-    if (heavy.length && heavy.every(s => s.r > tr)) overCount++;
+    // Qualifies if ALL heavy sets are AT or ABOVE target reps
+    if (heavy.length && heavy.every(s => s.r >= tr)) qualCount++;
   }
-  if (overCount >= OVERLOAD_SESSIONS) {
-    return {weight: maxW + inc, note: `+${inc} lbs — ${overCount} sessions over target ✓`, inc:true, lastW:maxW};
+  if (qualCount >= OVERLOAD_SESSIONS) {
+    return {
+      weight: maxW + inc,
+      note: `Ready to advance — ${qualCount}/${LOOK_BACK} sessions at ${targetRepsRef}+ reps`,
+      inc: true,
+      lastW: maxW
+    };
   }
-  return {weight: maxW, note: `Hold — ${overCount}/${OVERLOAD_SESSIONS} over target`, inc:false, lastW:maxW};
+  return {
+    weight: maxW,
+    note: `${qualCount}/${OVERLOAD_SESSIONS} sessions at ${targetRepsRef}+ reps (last ${LOOK_BACK})`,
+    inc: false,
+    lastW: maxW
+  };
 }
 
 function checkPR(exName, w, r) {
@@ -492,6 +530,16 @@ function fmtElapsed(ms) {
 
 function getCurrentRoutine() {
   return S.customRoutines.default || DEFAULT_ROUTINE;
+}
+
+// Returns a Set of exercise names that were absent from the most recent session.
+// Used to prioritize those exercises at the top of the next workout.
+function getMissedExercises() {
+  if (!S.sessions.length) return new Set();
+  const lastSess = S.sessions[0];
+  const routine = getCurrentRoutine();
+  const lastNames = new Set(lastSess.exercises.map(e => e.name));
+  return new Set(routine.filter(ex => !lastNames.has(ex.name)).map(ex => ex.name));
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
@@ -667,14 +715,26 @@ function renderHome() {
 // ── ACTIVE WORKOUT ────────────────────────────────────────────────────────────
 function startWorkout() {
   const routine = getCurrentRoutine();
-  const exercises = routine.map(item => {
+  const missed = getMissedExercises();
+
+  // Sort: missed exercises from last session rise to the top (preserving relative order).
+  const sortedRoutine = [
+    ...routine.filter(item => missed.has(item.name)),
+    ...routine.filter(item => !missed.has(item.name)),
+  ];
+
+  const exercises = sortedRoutine.map(item => {
     const sug = getSuggestion(item.name);
     const w = sug.weight || 0;
     const sets = [];
     for (let i = 0; i < item.sets; i++) {
       sets.push({w, r:0, n:'', done:false, isPR:false});
     }
-    return {name: item.name, targetSets: item.sets, targetReps: item.targetReps, sets, suggestion: sug};
+    return {
+      name: item.name, targetSets: item.sets, targetReps: item.targetReps,
+      sets, suggestion: sug,
+      missedLast: missed.has(item.name),
+    };
   });
   S.wkSession = {
     id: 's' + Date.now() + Math.random().toString(36).slice(2,6),
@@ -719,6 +779,8 @@ function buildExCard(ex, ei) {
   const sugChip = sug ? (sug.inc
     ? `<span class="chip chip-up">↑ ${sug.weight} lbs</span>`
     : sug.weight ? `<span class="chip chip-hold">${sug.weight} lbs</span>` : '') : '';
+  const missedChip = ex.missedLast
+    ? `<span class="chip chip-missed" style="margin-right:4px">↩ Missed</span>` : '';
 
   const setsHTML = ex.sets.map((set, si) => {
     const isDone = set.done;
@@ -754,7 +816,9 @@ function buildExCard(ex, ei) {
       <span style="font-size:1.1rem">${c.icon}</span>
       <div style="flex:1;min-width:0">
         <div class="ex-name">${ex.name}</div>
-        <div class="ex-sug">${sug?.note||''}</div>
+        <div class="ex-sug" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+          ${missedChip}<span>${sug?.note||''}</span>
+        </div>
       </div>
       ${sugChip}
       <button class="btn-icon red" style="margin-left:6px"
