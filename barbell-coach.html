@@ -162,6 +162,18 @@ body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,
 .chip-missed{background:#1a1a3e;color:#818cf8;border:1px solid #3730a3}
 .section-title{font-size:.75rem;text-transform:uppercase;letter-spacing:.07em;
   color:#475569;font-weight:700;padding:14px 0 7px}
+/* Muscle group weekly checklist */
+.muscle-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px}
+.mc-item{background:#1a1a2e;border-radius:10px;padding:9px 11px;display:flex;align-items:center;gap:8px}
+.mc-item.met{border-left:3px solid #4ade80}
+.mc-item.partial{border-left:3px solid #facc15}
+.mc-item.zero{border-left:3px solid #334155}
+.mc-label{flex:1;font-size:.75rem;font-weight:600;color:#94a3b8}
+.mc-badge{font-size:.72rem;font-weight:700;min-width:36px;text-align:center;
+  background:#0f0f1a;border-radius:6px;padding:3px 6px}
+.mc-badge.met{color:#4ade80}.mc-badge.partial{color:#facc15}.mc-badge.zero{color:#334155}
+/* Muscles label on exercise cards */
+.ex-muscles{font-size:.67rem;color:#475569;margin-top:1px;letter-spacing:.01em}
 /* Progress tab */
 .prog-detail-body{padding:12px 0 4px}
 .prog-metric{background:#0f0f1a;border-radius:8px;padding:10px;text-align:center}
@@ -194,20 +206,27 @@ const LOOK_BACK = 5;
 const REST_SEC = 60;
 
 const EXERCISE_CFG = {
-  'Barbell Bench Press':          {icon:'🏋️',cat:'upper',inc:5,color:'#ef4444'},
-  'Incline Barbell Bench Press':  {icon:'📈',cat:'upper',inc:5,color:'#fb923c'},
-  'Close Grip Bench Press':       {icon:'💎',cat:'upper',inc:5,color:'#f97316'},
-  'Barbell Skull Crushers':       {icon:'💀',cat:'upper',inc:5,color:'#c084fc'},
-  'Barbell Bicep Curl':           {icon:'💪',cat:'upper',inc:5,color:'#a855f7'},
-  'Barbell Overhead Press':       {icon:'⬆️',cat:'upper',inc:5,color:'#3b82f6'},
-  'Barbell Bent Over Row':        {icon:'🔄',cat:'upper',inc:5,color:'#06b6d4'},
-  'Barbell Shrug':                {icon:'🤷',cat:'upper',inc:5,color:'#38bdf8'},
-  'Barbell Back Squat':           {icon:'🦵',cat:'lower',inc:5,color:'#22c55e'},
-  'Romanian Deadlift':            {icon:'🔻',cat:'lower',inc:5,color:'#facc15'},
-  'Barbell Hip Thrust':           {icon:'🍑',cat:'lower',inc:5,color:'#f472b6'},
-  'Barbell Deadlift':             {icon:'⚡',cat:'lower',inc:5,color:'#4ade80'},
-  'Barbell Good Morning':         {icon:'🌅',cat:'lower',inc:5,color:'#a3e635'},
-  'Ab Wheel Rollouts':            {icon:'⭕',cat:'core', inc:0, color:'#818cf8'},
+  'Barbell Bench Press':          {icon:'🏋️',cat:'upper',inc:5,color:'#ef4444',muscles:'Chest'},
+  'Incline Barbell Bench Press':  {icon:'📈',cat:'upper',inc:5,color:'#fb923c',muscles:'Chest · Upper Chest'},
+  'Close Grip Bench Press':       {icon:'💎',cat:'upper',inc:5,color:'#f97316',muscles:'Chest · Triceps'},
+  'Barbell Skull Crushers':       {icon:'💀',cat:'upper',inc:5,color:'#c084fc',muscles:'Triceps'},
+  'Barbell Bicep Curl':           {icon:'💪',cat:'upper',inc:5,color:'#a855f7',muscles:'Biceps'},
+  'Barbell Overhead Press':       {icon:'⬆️',cat:'upper',inc:5,color:'#3b82f6',muscles:'Shoulders · Triceps'},
+  'Barbell Bent Over Row':        {icon:'🔄',cat:'upper',inc:5,color:'#06b6d4',muscles:'Back · Biceps'},
+  'Barbell Shrug':                {icon:'🤷',cat:'upper',inc:5,color:'#38bdf8',muscles:'Traps'},
+  'Lat Pulldown':                 {icon:'🎯',cat:'upper',inc:5,color:'#0ea5e9',muscles:'Lats · Biceps'},
+  'Pullup':                       {icon:'🔝',cat:'upper',inc:0,color:'#2dd4bf',muscles:'Lats · Biceps'},
+  'Barbell Upright Row':          {icon:'↕️',cat:'upper',inc:5,color:'#60a5fa',muscles:'Shoulders · Traps'},
+  'Barbell Back Squat':           {icon:'🦵',cat:'lower',inc:5,color:'#22c55e',muscles:'Quads · Glutes'},
+  'Romanian Deadlift':            {icon:'🔻',cat:'lower',inc:5,color:'#facc15',muscles:'Hamstrings · Glutes'},
+  'Barbell Hip Thrust':           {icon:'🍑',cat:'lower',inc:5,color:'#f472b6',muscles:'Glutes'},
+  'Barbell Deadlift':             {icon:'⚡',cat:'lower',inc:5,color:'#4ade80',muscles:'Back · Hamstrings'},
+  'Barbell Good Morning':         {icon:'🌅',cat:'lower',inc:5,color:'#a3e635',muscles:'Hamstrings · Lower Back'},
+  'Barbell Lunges':               {icon:'🚶',cat:'lower',inc:5,color:'#86efac',muscles:'Quads · Glutes'},
+  'Barbell Front Squat':          {icon:'🏅',cat:'lower',inc:5,color:'#34d399',muscles:'Quads · Core'},
+  'Barbell Sumo Deadlift':        {icon:'🏆',cat:'lower',inc:5,color:'#fde68a',muscles:'Glutes · Hamstrings'},
+  'Ab Wheel Rollouts':            {icon:'⭕',cat:'core', inc:0, color:'#818cf8',muscles:'Core · Hip Flexors'},
+  'Plank':                        {icon:'🧱',cat:'core', inc:0, color:'#6366f1',muscles:'Core'},
 };
 const ALL_EXERCISES = Object.keys(EXERCISE_CFG);
 
@@ -218,6 +237,7 @@ const DEFAULT_ROUTINE = [
   {name:'Barbell Skull Crushers',      sets:3, targetReps:10},
   {name:'Barbell Bicep Curl',          sets:2, targetReps:10},
   {name:'Barbell Bent Over Row',       sets:3, targetReps:8},
+  {name:'Lat Pulldown',                sets:3, targetReps:10},
   {name:'Barbell Overhead Press',      sets:3, targetReps:8},
   {name:'Barbell Back Squat',          sets:3, targetReps:8},
   {name:'Romanian Deadlift',           sets:3, targetReps:10},
@@ -227,6 +247,105 @@ const DEFAULT_ROUTINE = [
 
 // ── SEED SESSIONS ─────────────────────────────────────────────────────────────
 const SEED_SESSIONS = [
+  {id:'s17924060236371b93',date:'2026-10-19',type:'default',label:'Full Body',startTime:1792406023637,notes:'',exercises:[
+    {name:'Barbell Overhead Press', targetSets:3,targetReps:8, sets:[{w:130,r:8,n:''},{w:130,r:7,n:''},{w:130,r:6,n:''}]},
+    {name:'Barbell Back Squat',     targetSets:3,targetReps:8, sets:[{w:210,r:8,n:''},{w:210,r:8,n:''},{w:210,r:8,n:''}]},
+    {name:'Romanian Deadlift',      targetSets:3,targetReps:10,sets:[{w:200,r:10,n:''},{w:200,r:10,n:''},{w:200,r:10,n:''}]},
+    {name:'Barbell Hip Thrust',     targetSets:3,targetReps:10,sets:[{w:190,r:10,n:''},{w:190,r:10,n:''},{w:190,r:10,n:''}]},
+    {name:'Ab Wheel Rollouts',      targetSets:3,targetReps:'8-10',sets:[{w:0,r:10,n:''},{w:0,r:10,n:''},{w:0,r:10,n:''}]},
+  ]},
+  {id:'s179214133857454fy',date:'2026-10-16',type:'default',label:'Full Body',startTime:1792141338574,notes:'',exercises:[
+    {name:'Barbell Bench Press',        targetSets:3,targetReps:8, sets:[{w:170,r:8,n:''},{w:170,r:8,n:''},{w:170,r:8,n:''}]},
+    {name:'Incline Barbell Bench Press',targetSets:3,targetReps:8, sets:[{w:155,r:8,n:''},{w:155,r:7,n:''},{w:155,r:5,n:''}]},
+    {name:'Close Grip Bench Press',     targetSets:2,targetReps:10,sets:[{w:140,r:10,n:''},{w:140,r:10,n:''}]},
+    {name:'Barbell Skull Crushers',     targetSets:3,targetReps:10,sets:[{w:70,r:10,n:''},{w:70,r:10,n:''},{w:70,r:9,n:''}]},
+    {name:'Barbell Bicep Curl',         targetSets:2,targetReps:10,sets:[{w:80,r:10,n:''},{w:80,r:9,n:''}]},
+    {name:'Barbell Bent Over Row',      targetSets:3,targetReps:8, sets:[{w:180,r:8,n:''},{w:180,r:8,n:''},{w:180,r:7,n:''}]},
+    {name:'Ab Wheel Rollouts',          targetSets:3,targetReps:'8-10',sets:[{w:0,r:15,n:''},{w:0,r:15,n:''},{w:0,r:15,n:''}]},
+  ]},
+  {id:'s179197218697412qk',date:'2026-10-14',type:'default',label:'Full Body',startTime:1791972186975,notes:'',exercises:[
+    {name:'Barbell Overhead Press',targetSets:3,targetReps:8, sets:[{w:130,r:8,n:''},{w:130,r:7,n:''},{w:130,r:4,n:''}]},
+    {name:'Barbell Back Squat',    targetSets:3,targetReps:8, sets:[{w:205,r:8,n:''},{w:205,r:8,n:''},{w:205,r:7,n:''}]},
+    {name:'Romanian Deadlift',     targetSets:3,targetReps:10,sets:[{w:195,r:10,n:''},{w:195,r:10,n:''},{w:195,r:10,n:''}]},
+    {name:'Barbell Hip Thrust',    targetSets:3,targetReps:10,sets:[{w:185,r:10,n:''},{w:185,r:10,n:''},{w:185,r:10,n:''}]},
+    {name:'Ab Wheel Rollouts',     targetSets:3,targetReps:'8-10',sets:[{w:0,r:10,n:''},{w:0,r:10,n:''},{w:0,r:10,n:''}]},
+  ]},
+  {id:'s1791801235908j6g2',date:'2026-10-12',type:'default',label:'Full Body',startTime:1791801235908,notes:'',exercises:[
+    {name:'Barbell Bench Press',        targetSets:3,targetReps:8, sets:[{w:170,r:8,n:''},{w:170,r:8,n:''},{w:170,r:7,n:''}]},
+    {name:'Close Grip Bench Press',     targetSets:2,targetReps:10,sets:[{w:140,r:10,n:''},{w:140,r:8,n:''}]},
+    {name:'Barbell Skull Crushers',     targetSets:3,targetReps:10,sets:[{w:65,r:10,n:''},{w:65,r:10,n:''},{w:65,r:10,n:''}]},
+    {name:'Barbell Bicep Curl',         targetSets:2,targetReps:10,sets:[{w:80,r:10,n:''},{w:80,r:10,n:''}]},
+    {name:'Barbell Bent Over Row',      targetSets:3,targetReps:8, sets:[{w:175,r:8,n:''},{w:175,r:8,n:''},{w:175,r:8,n:''}]},
+    {name:'Incline Barbell Bench Press',targetSets:3,targetReps:8, sets:[{w:150,r:8,n:''},{w:150,r:8,n:''},{w:150,r:8,n:''}]},
+  ]},
+  {id:'s1791536772584j4h6',date:'2026-10-09',type:'default',label:'Full Body',startTime:1791536772584,notes:'',exercises:[
+    {name:'Barbell Overhead Press',     targetSets:3,targetReps:8, sets:[{w:125,r:8,n:''},{w:125,r:8,n:''},{w:125,r:6,n:''}]},
+    {name:'Barbell Back Squat',         targetSets:3,targetReps:8, sets:[{w:200,r:8,n:''},{w:200,r:10,n:''},{w:200,r:8,n:''}]},
+    {name:'Romanian Deadlift',          targetSets:3,targetReps:10,sets:[{w:190,r:10,n:''},{w:190,r:10,n:''},{w:190,r:10,n:''}]},
+    {name:'Barbell Hip Thrust',         targetSets:3,targetReps:10,sets:[{w:185,r:10,n:''},{w:185,r:10,n:''},{w:185,r:10,n:''}]},
+    {name:'Incline Barbell Bench Press',targetSets:3,targetReps:8, sets:[{w:145,r:8,n:''},{w:145,r:8,n:''},{w:145,r:8,n:''}]},
+    {name:'Ab Wheel Rollouts',          targetSets:3,targetReps:'8-10',sets:[{w:0,r:15,n:''},{w:0,r:15,n:''},{w:0,r:15,n:''}]},
+  ]},
+  {id:'s1791363813196miex',date:'2026-10-07',type:'default',label:'Full Body',startTime:1791363813196,notes:'',exercises:[
+    {name:'Ab Wheel Rollouts',          targetSets:3,targetReps:'8-10',sets:[{w:0,r:10,n:''},{w:0,r:10,n:''},{w:0,r:10,n:''}]},
+    {name:'Barbell Bench Press',        targetSets:3,targetReps:8, sets:[{w:170,r:10,n:''},{w:170,r:8,n:''},{w:170,r:7,n:''}]},
+    {name:'Incline Barbell Bench Press',targetSets:3,targetReps:8, sets:[{w:140,r:8,n:''},{w:140,r:7,n:''},{w:140,r:8,n:''}]},
+    {name:'Close Grip Bench Press',     targetSets:2,targetReps:10,sets:[{w:140,r:10,n:''},{w:140,r:9,n:''}]},
+    {name:'Barbell Skull Crushers',     targetSets:3,targetReps:10,sets:[{w:55,r:10,n:''},{w:55,r:10,n:''},{w:55,r:10,n:''}]},
+    {name:'Barbell Bicep Curl',         targetSets:2,targetReps:10,sets:[{w:80,r:8,n:''},{w:80,r:8,n:''}]},
+    {name:'Barbell Bent Over Row',      targetSets:3,targetReps:8, sets:[{w:170,r:8,n:''},{w:170,r:8,n:''},{w:170,r:8,n:''}]},
+  ]},
+  {id:'s1791196438073sroi',date:'2026-10-05',type:'default',label:'Full Body',startTime:1791196438073,notes:'',exercises:[
+    {name:'Barbell Skull Crushers',     targetSets:3,targetReps:10,sets:[{w:55,r:10,n:''},{w:55,r:10,n:''},{w:55,r:9,n:''}]},
+    {name:'Barbell Bicep Curl',         targetSets:2,targetReps:10,sets:[{w:80,r:10,n:''},{w:80,r:8,n:''}]},
+    {name:'Barbell Overhead Press',     targetSets:3,targetReps:8, sets:[{w:120,r:9,n:''},{w:120,r:7,n:''},{w:120,r:6,n:''}]},
+    {name:'Barbell Back Squat',         targetSets:3,targetReps:8, sets:[{w:195,r:8,n:''},{w:195,r:8,n:''},{w:195,r:8,n:''}]},
+    {name:'Barbell Bench Press',        targetSets:3,targetReps:8, sets:[{w:170,r:8,n:''},{w:170,r:8,n:''},{w:170,r:6,n:''}]},
+    {name:'Incline Barbell Bench Press',targetSets:3,targetReps:8, sets:[{w:135,r:8,n:''},{w:135,r:8,n:''},{w:135,r:8,n:''}]},
+    {name:'Close Grip Bench Press',     targetSets:2,targetReps:10,sets:[{w:135,r:8,n:''},{w:135,r:8,n:''}]},
+    {name:'Barbell Bent Over Row',      targetSets:3,targetReps:8, sets:[{w:165,r:8,n:''},{w:165,r:8,n:''},{w:165,r:4,n:''}]},
+    {name:'Romanian Deadlift',          targetSets:3,targetReps:10,sets:[{w:185,r:10,n:''},{w:185,r:10,n:''},{w:185,r:10,n:''}]},
+    {name:'Barbell Hip Thrust',         targetSets:3,targetReps:10,sets:[{w:185,r:8,n:''},{w:185,r:10,n:''},{w:185,r:10,n:''}]},
+  ]},
+  {id:'s179093185148363pk',date:'2026-10-02',type:'default',label:'Full Body',startTime:1790931851483,notes:'',exercises:[
+    {name:'Barbell Bent Over Row',      targetSets:3,targetReps:8, sets:[{w:160,r:8,n:''},{w:160,r:8,n:''},{w:160,r:8,n:''}]},
+    {name:'Romanian Deadlift',          targetSets:3,targetReps:10,sets:[{w:185,r:8,n:''},{w:185,r:8,n:''},{w:185,r:10,n:''}]},
+    {name:'Barbell Hip Thrust',         targetSets:3,targetReps:10,sets:[{w:185,r:8,n:''},{w:185,r:8,n:''},{w:185,r:8,n:''}]},
+    {name:'Barbell Bench Press',        targetSets:3,targetReps:8, sets:[{w:165,r:9,n:''},{w:165,r:8,n:''},{w:165,r:7,n:''}]},
+    {name:'Incline Barbell Bench Press',targetSets:3,targetReps:8, sets:[{w:130,r:10,n:''},{w:130,r:8,n:''},{w:130,r:8,n:''}]},
+    {name:'Close Grip Bench Press',     targetSets:2,targetReps:10,sets:[{w:130,r:10,n:''},{w:130,r:9,n:''}]},
+    {name:'Ab Wheel Rollouts',          targetSets:3,targetReps:'8-10',sets:[{w:0,r:10,n:''},{w:0,r:10,n:''},{w:0,r:10,n:''}]},
+  ]},
+  {id:'s1790760556548fiym',date:'2026-09-30',type:'default',label:'Full Body',startTime:1790760556548,notes:'',exercises:[
+    {name:'Incline Barbell Bench Press',targetSets:3,targetReps:8, sets:[{w:125,r:11,n:''},{w:125,r:10,n:''},{w:125,r:9,n:''}]},
+    {name:'Close Grip Bench Press',     targetSets:2,targetReps:10,sets:[{w:125,r:10,n:''},{w:125,r:10,n:''}]},
+    {name:'Barbell Bench Press',        targetSets:3,targetReps:8, sets:[{w:160,r:8,n:''},{w:160,r:8,n:''},{w:160,r:5,n:''}]},
+    {name:'Barbell Skull Crushers',     targetSets:3,targetReps:10,sets:[{w:55,r:10,n:''},{w:55,r:10,n:''},{w:55,r:8,n:''}]},
+    {name:'Barbell Bicep Curl',         targetSets:2,targetReps:10,sets:[{w:80,r:10,n:''},{w:80,r:7,n:''}]},
+    {name:'Barbell Overhead Press',     targetSets:3,targetReps:8, sets:[{w:115,r:8,n:''},{w:115,r:7,n:''},{w:115,r:6,n:''}]},
+    {name:'Barbell Back Squat',         targetSets:3,targetReps:8, sets:[{w:190,r:8,n:''},{w:190,r:8,n:''},{w:190,r:8,n:''}]},
+    {name:'Ab Wheel Rollouts',          targetSets:3,targetReps:'8-10',sets:[{w:0,r:15,n:''},{w:0,r:15,n:''},{w:0,r:15,n:''}]},
+  ]},
+  {id:'s17905881204520ilx',date:'2026-09-28',type:'default',label:'Full Body',startTime:1790588120452,notes:'',exercises:[
+    {name:'Barbell Skull Crushers',     targetSets:3,targetReps:10,sets:[{w:50,r:10,n:''},{w:55,r:10,n:''},{w:50,r:8,n:''}]},
+    {name:'Barbell Bicep Curl',         targetSets:2,targetReps:10,sets:[{w:80,r:10,n:''},{w:80,r:7,n:''}]},
+    {name:'Barbell Bent Over Row',      targetSets:3,targetReps:8, sets:[{w:155,r:10,n:''},{w:155,r:10,n:''},{w:155,r:8,n:''}]},
+    {name:'Barbell Overhead Press',     targetSets:3,targetReps:8, sets:[{w:110,r:8,n:''},{w:110,r:8,n:''},{w:110,r:8,n:''}]},
+    {name:'Barbell Bench Press',        targetSets:3,targetReps:8, sets:[{w:155,r:8,n:''},{w:155,r:8,n:''},{w:155,r:6,n:''}]},
+    {name:'Barbell Back Squat',         targetSets:3,targetReps:8, sets:[{w:185,r:10,n:''},{w:185,r:8,n:''},{w:185,r:8,n:''}]},
+    {name:'Romanian Deadlift',          targetSets:3,targetReps:10,sets:[{w:185,r:10,n:''},{w:185,r:10,n:''},{w:185,r:10,n:''}]},
+    {name:'Barbell Hip Thrust',         targetSets:3,targetReps:10,sets:[{w:185,r:10,n:''},{w:185,r:8,n:''},{w:185,r:8,n:''}]},
+    {name:'Ab Wheel Rollouts',          targetSets:3,targetReps:'8-10',sets:[{w:0,r:10,n:''},{w:0,r:10,n:''},{w:0,r:10,n:''}]},
+  ]},
+  {id:'s1790333520815tdpy',date:'2026-09-25',type:'default',label:'Full Body',startTime:1790333520815,notes:'',exercises:[
+    {name:'Barbell Back Squat',         targetSets:3,targetReps:8, sets:[{w:180,r:8,n:''},{w:180,r:8,n:''},{w:180,r:8,n:''}]},
+    {name:'Romanian Deadlift',          targetSets:3,targetReps:10,sets:[{w:185,r:8,n:''},{w:185,r:8,n:''},{w:185,r:8,n:''}]},
+    {name:'Barbell Hip Thrust',         targetSets:3,targetReps:10,sets:[{w:185,r:8,n:''},{w:185,r:8,n:''},{w:185,r:8,n:''}]},
+    {name:'Ab Wheel Rollouts',          targetSets:3,targetReps:'8-10',sets:[{w:0,r:10,n:''},{w:0,r:10,n:''},{w:0,r:10,n:''}]},
+    {name:'Barbell Bench Press',        targetSets:3,targetReps:8, sets:[{w:150,r:8,n:''},{w:150,r:8,n:''},{w:150,r:8,n:''}]},
+    {name:'Incline Barbell Bench Press',targetSets:3,targetReps:8, sets:[{w:115,r:8,n:''},{w:115,r:8,n:''},{w:120,r:8,n:''}]},
+    {name:'Close Grip Bench Press',     targetSets:2,targetReps:10,sets:[{w:120,r:10,n:''},{w:120,r:8,n:''}]},
+  ]},
   {id:'s17901608153900i2w',date:'2026-09-23',type:'default',label:'Full Body',startTime:1790160815390,notes:'',exercises:[
     {name:'Barbell Bench Press',        targetSets:3,targetReps:8, sets:[{w:145,r:10,n:''},{w:145,r:10,n:''}]},
     {name:'Incline Barbell Bench Press',targetSets:3,targetReps:8, sets:[{w:95,r:8,n:''},{w:115,r:8,n:''},{w:115,r:9,n:''}]},
@@ -389,6 +508,48 @@ const SEED_SESSIONS = [
     {name:'Romanian Deadlift',targetSets:2,targetReps:10,sets:[{w:135,r:10,n:'Up'},{w:155,r:12,n:'Start here next time'}]},
   ]},
 ];
+
+// ── MUSCLE GROUP MAP ──────────────────────────────────────────────────────────
+const MUSCLE_GROUP_MAP = {
+  'Chest':       ['Barbell Bench Press','Incline Barbell Bench Press','Close Grip Bench Press'],
+  'Back':        ['Barbell Bent Over Row','Lat Pulldown','Pullup','Barbell Upright Row','Barbell Deadlift','Barbell Sumo Deadlift'],
+  'Shoulders':   ['Barbell Overhead Press','Barbell Upright Row'],
+  'Triceps':     ['Barbell Skull Crushers','Close Grip Bench Press'],
+  'Biceps':      ['Barbell Bicep Curl','Barbell Bent Over Row','Lat Pulldown','Pullup'],
+  'Quads':       ['Barbell Back Squat','Barbell Front Squat','Barbell Lunges'],
+  'Hamstrings':  ['Romanian Deadlift','Barbell Good Morning','Barbell Deadlift','Barbell Sumo Deadlift'],
+  'Glutes':      ['Barbell Hip Thrust','Barbell Back Squat','Romanian Deadlift','Barbell Lunges','Barbell Sumo Deadlift'],
+  'Core':        ['Ab Wheel Rollouts','Plank'],
+};
+const MUSCLE_TARGET = 2; // sessions per week recommendation
+
+function getWeeklyMuscleCounts() {
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0=Sun
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
+  monday.setHours(0,0,0,0);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 7);
+
+  const weekSessions = S.sessions.filter(s => {
+    const d = new Date(s.date + 'T00:00:00');
+    return d >= monday && d < sunday;
+  });
+
+  const counts = {};
+  for (const group of Object.keys(MUSCLE_GROUP_MAP)) {
+    const sessionSet = new Set();
+    for (const sess of weekSessions) {
+      const names = sess.exercises.map(e => e.name);
+      if (MUSCLE_GROUP_MAP[group].some(ex => names.includes(ex))) {
+        sessionSet.add(sess.id);
+      }
+    }
+    counts[group] = sessionSet.size;
+  }
+  return counts;
+}
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let S = {
@@ -665,17 +826,32 @@ function renderHome() {
   const lastSess = S.sessions[0];
   const lastDate = lastSess ? fmtDate(lastSess.date) : 'No sessions yet';
   const routine = getCurrentRoutine();
-  const mainLifts = ['Barbell Bench Press','Barbell Overhead Press','Barbell Bent Over Row','Barbell Back Squat','Romanian Deadlift'];
 
-  const progItems = mainLifts.map(name => {
+  // Current weights for ALL routine exercises
+  const progItems = routine.map(item => {
+    const name = item.name;
     const sug = getSuggestion(name);
     const c = cfg(name);
     const status = sug.inc ? `↑ +${c.inc} lbs ready` : sug.note;
     const cls = sug.inc ? 'up' : 'hold';
+    const shortName = name.replace('Barbell ','').replace('Romanian ','RDL ').replace('Incline ','Inc ');
+    const wtDisplay = isCore(name) ? 'BW' : ((sug.lastW||sug.weight||'?') + ' lbs');
     return `<div class="prog-item" style="--c:${c.color}">
-      <div class="prog-nm">${c.icon} ${name.replace('Barbell ','').replace('Romanian ','RDL ')}</div>
-      <div class="prog-wt">${sug.lastW||sug.weight||'?'} lbs</div>
+      <div class="prog-nm">${c.icon} ${shortName}</div>
+      <div class="prog-nm" style="color:#475569;font-size:.62rem">${c.muscles||''}</div>
+      <div class="prog-wt">${wtDisplay}</div>
       <div class="prog-st ${cls}">${status}</div>
+    </div>`;
+  }).join('');
+
+  // Weekly muscle group checklist
+  const muscleCounts = getWeeklyMuscleCounts();
+  const muscleItems = Object.entries(muscleCounts).map(([group, count]) => {
+    const cls = count >= MUSCLE_TARGET ? 'met' : count > 0 ? 'partial' : 'zero';
+    const badge = count >= MUSCLE_TARGET ? `${count}/${MUSCLE_TARGET} ✓` : `${count}/${MUSCLE_TARGET}`;
+    return `<div class="mc-item ${cls}">
+      <span class="mc-label">${group}</span>
+      <span class="mc-badge ${cls}">${badge}</span>
     </div>`;
   }).join('');
 
@@ -693,6 +869,9 @@ function renderHome() {
 
     <div class="section-title">Current Weights</div>
     <div class="prog-grid">${progItems}</div>
+
+    <div class="section-title">Muscle Groups This Week <span style="font-size:.65rem;color:#334155;text-transform:none;font-weight:400">Goal: ${MUSCLE_TARGET}× per group</span></div>
+    <div class="muscle-grid">${muscleItems}</div>
 
     ${lastSess ? `
     <div class="section-title">Last Workout</div>
@@ -816,6 +995,7 @@ function buildExCard(ex, ei) {
       <span style="font-size:1.1rem">${c.icon}</span>
       <div style="flex:1;min-width:0">
         <div class="ex-name">${ex.name}</div>
+        ${c.muscles ? `<div class="ex-muscles">${c.muscles}</div>` : ''}
         <div class="ex-sug" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
           ${missedChip}<span>${sug?.note||''}</span>
         </div>
@@ -970,7 +1150,10 @@ function openAddExModal(target) {
         const sugText = isCore(name) ? 'Bodyweight' : sug.weight ? `${sug.weight} lbs` : 'Set weight';
         return `<div class="ex-picker-item" onclick="doAddEx('${name.replace(/'/g,"\\'")}')">
           <span class="ex-picker-icon">${c.icon}</span>
-          <span class="ex-picker-name">${name}</span>
+          <div style="flex:1;min-width:0">
+            <div class="ex-picker-name">${name}</div>
+            ${c.muscles ? `<div style="font-size:.68rem;color:#475569">${c.muscles}</div>` : ''}
+          </div>
           <span class="ex-picker-sug">${sugText}</span>
         </div>`;
       }).join('');
