@@ -1,4 +1,3 @@
-[barbell-coach-readme.md](https://github.com/user-attachments/files/32567237/barbell-coach-readme.md)
 # 🏋️ Barbell Coach
 
 A mobile-first progressive overload workout tracker built as a single-file PWA. No app store, no account, no backend — just open it in Chrome and lift.
@@ -10,8 +9,9 @@ A mobile-first progressive overload workout tracker built as a single-file PWA. 
 ## Features
 
 **Workout Tracking**
-- Full-body barbell routine with 14 exercises across upper, lower, and core categories
-- Log weight and reps per set with inline +/− nudge controls
+- Full-body barbell routine with 21 exercises across upper, lower, and core categories
+- Muscle group label shown on each exercise card
+- Log weight and reps per set with inline input controls
 - Rest timer starts automatically after each completed set
 - Elapsed workout clock and per-exercise PR detection (Epley 1RM formula)
 - Add or remove exercises and sets mid-workout
@@ -21,23 +21,31 @@ A mobile-first progressive overload workout tracker built as a single-file PWA. 
 - Suggests a weight increase when 2 of the last 5 sessions qualify
 - Weights increase in 5 lb increments by default
 
-**Smart Exercise Priority**
-- Exercises skipped in the previous session bubble to the top of the next workout with a `↩ Missed` badge so you catch up before fatigue sets in
+**Continuous Rotation Scheduling**
+- Exercises rotate continuously through the default routine order based on where the previous session ended — no weekly reset
+- Core exercises always appear first in every workout regardless of rotation position
+- The app tracks a `routinePointer` (the last non-core exercise completed) so the next session picks up exactly where you left off
+- Example: finish a session ending at Lat Pulldown → next workout shows Core, then Bent Over Row, Close Grip Bench Press, Skull Crushers, etc.
+
+**Home Screen**
+- "Next Workout Order" preview showing the upcoming exercise sequence
+- "Muscle Groups This Week" checklist — tracks how many times each major muscle group has been hit this week against a recommended target, with a visual progress bar
+- "Current Weights" section showing the suggested working weight for every exercise in your routine
 
 **Progress Tab**
-- Per-exercise sparkline charts showing estimated 1RM, volume load, and max weight over time
-- Trend indicators comparing last session to prior average
-- 8-session history table per exercise
+- Per-exercise charts showing estimated 1RM, volume load, and max weight over time
+- Trend indicator comparing last session to prior
+- Recent session history table per exercise
 
 **Session History**
 - Full log of every past session with expandable exercise detail
 - Delete individual sessions
-- Shows volume load and PR highlights
+- Shows volume load and PR count per session
 
 **Routine Management**
-- Edit the default routine (add/remove exercises, change set/rep targets, reorder)
-- Save custom named routines
-- Start ad-hoc sessions outside your normal routine
+- Edit the default routine (add/remove exercises, change set/rep targets)
+- Search all available exercises to add to routine or mid-workout
+- Reset custom routine back to default at any time
 
 **Data Portability**
 - Export all session data as JSON from the Settings tab
@@ -48,22 +56,48 @@ A mobile-first progressive overload workout tracker built as a single-file PWA. 
 
 ## Exercises
 
-| Exercise | Category |
-|---|---|
-| Barbell Bench Press | Upper |
-| Incline Barbell Bench Press | Upper |
-| Close Grip Bench Press | Upper |
-| Barbell Skull Crushers | Upper |
-| Barbell Bicep Curl | Upper |
-| Barbell Bent Over Row | Upper |
-| Barbell Overhead Press | Upper |
-| Barbell Shrug | Upper |
-| Barbell Back Squat | Lower |
-| Romanian Deadlift | Lower |
-| Barbell Hip Thrust | Lower |
-| Barbell Deadlift | Lower |
-| Barbell Good Morning | Lower |
-| Ab Wheel Rollouts | Core |
+| Exercise | Category | Muscles |
+|---|---|---|
+| Barbell Bench Press | Upper | Chest |
+| Incline Barbell Bench Press | Upper | Chest · Upper Chest |
+| Close Grip Bench Press | Upper | Chest · Triceps |
+| Barbell Skull Crushers | Upper | Triceps |
+| Barbell Bicep Curl | Upper | Biceps |
+| Barbell Overhead Press | Upper | Shoulders · Triceps |
+| Barbell Bent Over Row | Upper | Back · Biceps |
+| Barbell Shrug | Upper | Traps |
+| Lat Pulldown | Upper | Lats · Biceps |
+| Pullup | Upper | Lats · Biceps |
+| Barbell Upright Row | Upper | Shoulders · Traps |
+| Barbell Back Squat | Lower | Quads · Glutes |
+| Romanian Deadlift | Lower | Hamstrings · Glutes |
+| Barbell Hip Thrust | Lower | Glutes |
+| Barbell Deadlift | Lower | Back · Hamstrings |
+| Barbell Good Morning | Lower | Hamstrings · Lower Back |
+| Barbell Lunges | Lower | Quads · Glutes |
+| Barbell Front Squat | Lower | Quads · Core |
+| Barbell Sumo Deadlift | Lower | Glutes · Hamstrings |
+| Core | Core | Core · Hip Flexors |
+| Plank | Core | Core |
+
+---
+
+## Default Routine Order
+
+The default routine cycles through the following exercises in order. The app rotates through this list continuously session to session, always starting Core first:
+
+1. Barbell Back Squat
+2. Barbell Bench Press
+3. Incline Barbell Bench Press
+4. Barbell Overhead Press
+5. Romanian Deadlift
+6. Barbell Hip Thrust
+7. Lat Pulldown
+8. Barbell Bent Over Row
+9. Close Grip Bench Press
+10. Barbell Skull Crushers
+11. Barbell Bicep Curl
+12. Core *(always presented first regardless of rotation position)*
 
 ---
 
@@ -90,6 +124,8 @@ This is a single HTML file with no build step, no dependencies, and no server re
 
 All data is stored in `localStorage` in your browser under the key `barbell-coach-v2`. Nothing is sent to any server. Clearing your browser data will erase your workout history — use the **Export** button in Settings regularly to back up your data as a JSON file.
 
+The exported JSON includes your full session history, any custom routine changes, and the current rotation pointer so your exercise order resumes correctly on import.
+
 **Cross-device sync:** Because the app is a static page with no backend, data does not automatically sync across devices. To move your data:
 1. Export JSON from the Settings tab on your source device
 2. Open the app on your target device
@@ -104,7 +140,8 @@ All data is stored in `localStorage` in your browser under the key `barbell-coac
 - Progressive Web App metadata (theme color, viewport, mobile web app capable)
 - All chart rendering done with inline SVG
 - 1RM estimation uses the Epley formula: `weight × (1 + reps / 30)`
-- Progressive overload constants are configurable at the top of the script (`OVERLOAD_SESSIONS`, `LOOK_BACK`, `REST_SEC`)
+- Rotation state stored as `routinePointer` (index into the non-core portion of the routine), persisted in `localStorage` alongside session data
+- Progressive overload and timer constants configurable at the top of the script (`OVERLOAD_SESSIONS`, `LOOK_BACK`, `REST_SEC`)
 
 ---
 
