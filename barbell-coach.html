@@ -3,1721 +3,1240 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0f0f1a">
 <title>Barbell Coach</title>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{height:100%;-webkit-tap-highlight-color:transparent}
-body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-  background:#0f0f1a;color:#e2e8f0;font-size:16px;overflow:hidden}
-#app{height:100%;display:flex;flex-direction:column;max-width:480px;margin:0 auto;
-  position:relative;overflow:hidden}
-.screen{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:80px}
-.screen-inner{padding:0 16px}
-.page-hdr{padding:16px 0 10px;display:flex;align-items:center;justify-content:space-between}
-.page-title{font-size:1.25rem;font-weight:700;display:flex;align-items:center;gap:8px}
-.card{background:#1a1a2e;border-radius:14px;padding:16px;margin-bottom:12px}
-.card-sm{background:#1e1e35;border-radius:10px;padding:12px;margin-bottom:8px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;
-  border-radius:10px;padding:10px 18px;font-size:.95rem;font-weight:600;cursor:pointer;
-  transition:all .15s;color:#fff}
-.btn:active{opacity:.75;transform:scale(.97)}
-.btn-primary{background:linear-gradient(135deg,#4f46e5,#7c3aed);width:100%;padding:15px;font-size:1rem}
-.btn-secondary{background:#252545;color:#a5b4fc}
-.btn-success{background:#15803d}
-.btn-danger{background:#b91c1c}
-.btn-ghost{background:transparent;border:1px solid #334155;color:#94a3b8}
-.btn-sm{padding:7px 14px;font-size:.85rem;border-radius:8px}
-.btn-block{width:100%}
-.btn-icon{width:30px;height:30px;border-radius:8px;border:none;cursor:pointer;
-  background:#1e2a3a;color:#94a3b8;display:inline-flex;align-items:center;
-  justify-content:center;font-size:.88rem;flex-shrink:0}
-.btn-icon.red{background:#3f1212;color:#f87171}
-.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;
-  max-width:480px;background:#111126;border-top:1px solid #1e2a3a;display:flex;z-index:100;
-  padding-bottom:env(safe-area-inset-bottom,0)}
-.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 0 8px;
-  cursor:pointer;color:#475569;font-size:.68rem;font-weight:600;gap:2px;border:none;
-  background:transparent;transition:color .15s}
-.nav-item.active{color:#818cf8}
-.nav-item .ni{font-size:1.25rem}
-/* Exercise cards */
-.ex-card{border-radius:12px;overflow:hidden;margin-bottom:10px}
-.ex-card-hdr{background:#1a1a2e;border-left:4px solid var(--c,#6366f1);padding:12px;
-  display:flex;align-items:center;gap:8px;cursor:pointer}
-.ex-card-hdr .ex-name{font-weight:600;font-size:.92rem;flex:1}
-.ex-card-hdr .ex-sug{font-size:.73rem;color:#94a3b8}
-.ex-card-hdr .chev{color:#475569;font-size:.8rem;transition:transform .2s;margin-left:4px}
-.ex-card-hdr.open .chev{transform:rotate(180deg)}
-.ex-card-body{background:#171730;padding:12px;display:none}
-.ex-card-body.open{display:block}
-/* Set rows */
-.set-row{display:flex;align-items:center;gap:5px;padding:6px 0;border-bottom:1px solid #1e2a3a}
-.set-row:last-child{border-bottom:none}
-.set-row.done{opacity:.6}
-.set-num{font-size:.75rem;color:#475569;width:22px;text-align:center;flex-shrink:0}
-.nc{display:flex;align-items:center;gap:2px}
-.nc input{width:48px;text-align:center;background:#0f0f1a;border:1px solid #2a3a4a;
-  border-radius:7px;padding:5px 2px;color:#e2e8f0;font-size:.88rem;font-weight:600;
-  -webkit-appearance:none;appearance:none}
-.nc input:focus{outline:none;border-color:#6366f1}
-.nc-btn{width:24px;height:24px;border-radius:6px;border:none;background:#252545;
-  color:#e2e8f0;font-size:1rem;cursor:pointer;display:flex;align-items:center;
-  justify-content:center;flex-shrink:0;line-height:1}
-.set-x{color:#334155;font-size:.75rem;margin:0 2px;flex-shrink:0}
-.set-chk{width:28px;height:28px;border-radius:7px;border:none;cursor:pointer;
-  background:#1e2a3a;color:#64748b;display:flex;align-items:center;justify-content:center;
-  font-size:.85rem;flex-shrink:0;transition:all .2s}
-.set-chk.done{background:#14532d;color:#4ade80}
-.set-pr{color:#f59e0b;font-size:.7rem;flex-shrink:0;margin-left:2px}
-.ex-controls{display:flex;gap:6px;margin-top:10px;padding-top:8px;border-top:1px solid #1e2a3a;flex-wrap:wrap}
-/* Timer overlay */
-.timer-ov{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;
-  max-width:480px;background:#0a1f10;border-bottom:2px solid #166534;padding:10px 14px;
-  z-index:200;display:flex;align-items:center;gap:8px;
-  padding-top:max(10px,env(safe-area-inset-top))}
-.timer-ov.hidden{display:none}
-.timer-lbl{font-size:.78rem;color:#86efac;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.timer-cnt{font-size:1.1rem;font-weight:700;color:#4ade80;min-width:34px;text-align:center}
-.timer-bw{flex:2;height:5px;background:#1a3020;border-radius:3px;overflow:hidden}
-.timer-bf{height:100%;background:#22c55e;transition:width .9s linear}
-.timer-skip{background:transparent;border:none;color:#4ade80;font-size:.78rem;cursor:pointer;padding:0 2px}
-/* Toast */
-#toast{position:fixed;bottom:86px;left:50%;transform:translateX(-50%);
-  background:#1e293b;border:1px solid #475569;border-radius:10px;
-  padding:9px 18px;font-size:.85rem;font-weight:500;z-index:400;
-  opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
-#toast.show{opacity:1}
-#toast.pr{background:#451a03;border-color:#d97706;color:#fbbf24}
-/* Modal */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:300;
-  display:flex;align-items:flex-end;justify-content:center;
-  opacity:0;pointer-events:none;transition:opacity .2s}
-.modal-bg.open{opacity:1;pointer-events:all}
-.modal{background:#1a1a2e;border-radius:20px 20px 0 0;padding:20px 18px 32px;
-  width:100%;max-width:480px;transform:translateY(100%);transition:transform .25s;
-  display:flex;flex-direction:column;max-height:88vh}
-.modal-bg.open .modal{transform:translateY(0)}
-.modal h3{margin-bottom:8px;font-size:1rem}
-.modal p{color:#94a3b8;font-size:.88rem;line-height:1.5}
-.modal-btns{display:flex;gap:10px;margin-top:16px}
-.modal-btns .btn{flex:1}
-.ex-picker-list{overflow-y:auto;flex:1;margin:10px 0}
-.ex-picker-cat{font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;
-  color:#475569;font-weight:700;padding:8px 0 4px}
-.ex-picker-item{display:flex;align-items:center;gap:10px;padding:10px;
-  border-radius:10px;margin-bottom:3px;cursor:pointer;background:#1e1e35;
-  transition:background .1s}
-.ex-picker-item:active{background:#252550}
-.ex-picker-icon{font-size:1.05rem;width:24px;text-align:center}
-.ex-picker-name{flex:1;font-size:.88rem;font-weight:500}
-.ex-picker-sug{font-size:.75rem;color:#64748b}
-/* Home */
-.home-hero{background:linear-gradient(135deg,#2e1065,#1e1b4b);border-radius:16px;
-  padding:22px;margin-bottom:14px;border:1px solid #4338ca;cursor:pointer;transition:opacity .15s}
-.home-hero:active{opacity:.8}
-.hero-emoji{font-size:2.5rem;margin-bottom:8px;line-height:1}
-.hero-title{font-size:1.2rem;font-weight:700;margin-bottom:4px}
-.hero-sub{font-size:.83rem;color:#a5b4fc}
-.prog-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
-.prog-item{background:#1a1a2e;border-radius:10px;padding:10px 12px;
-  border-left:3px solid var(--c,#6366f1)}
-.prog-nm{font-size:.68rem;color:#64748b;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.prog-wt{font-size:1.05rem;font-weight:700}
-.prog-st{font-size:.68rem;margin-top:2px}
-.prog-st.up{color:#4ade80}.prog-st.hold{color:#64748b}
-/* History */
-.hist-card{background:#1a1a2e;border-radius:12px;margin-bottom:10px;overflow:hidden}
-.hist-hdr{display:flex;align-items:center;padding:12px;cursor:pointer;gap:10px}
-.hist-date{font-weight:600;font-size:.88rem;flex:1}
-.hist-meta{font-size:.76rem;color:#64748b}
-.hist-body{padding:0 12px 12px;display:none}
-.hist-body.open{display:block}
-.hist-ex{margin-bottom:8px}
-.hist-ex-nm{font-size:.8rem;font-weight:600;color:#a5b4fc;margin-bottom:3px}
-.hist-sets{font-size:.78rem;color:#94a3b8;line-height:1.8}
-/* Settings */
-.s-row{background:#1a1a2e;border-radius:10px;margin-bottom:6px;display:flex;
-  align-items:center;padding:10px 12px;gap:10px}
-.s-row .ri{font-size:1rem;width:24px;text-align:center}
-.s-row .rinfo{flex:1}
-.s-row .rname{font-size:.88rem;font-weight:500}
-.s-row .rmeta{font-size:.73rem;color:#64748b}
-/* Done */
-.done-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
-.done-stat{background:#1a1a2e;border-radius:12px;padding:13px;text-align:center}
-.done-stat .dsv{font-size:1.4rem;font-weight:700;color:#818cf8}
-.done-stat .dsl{font-size:.7rem;color:#64748b;margin-top:3px}
-/* Workout header */
-.wk-hdr{padding:14px 16px 8px;display:flex;align-items:center;gap:10px;
-  background:#111126;border-bottom:1px solid #1e2a3a;position:sticky;top:0;z-index:10}
-.wk-title{font-weight:700;font-size:1rem;flex:1}
-.wk-elapsed{font-size:.8rem;color:#64748b}
-.chip{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:600}
-.chip-up{background:#14532d;color:#4ade80}
-.chip-hold{background:#1e293b;color:#64748b}
-.chip-pr{background:#451a03;color:#f59e0b}
-.chip-missed{background:#1a1a3e;color:#818cf8;border:1px solid #3730a3}
-.section-title{font-size:.75rem;text-transform:uppercase;letter-spacing:.07em;
-  color:#475569;font-weight:700;padding:14px 0 7px}
-/* Muscle group weekly checklist */
-.muscle-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px}
-.mc-item{background:#1a1a2e;border-radius:10px;padding:9px 11px;display:flex;align-items:center;gap:8px}
-.mc-item.met{border-left:3px solid #4ade80}
-.mc-item.partial{border-left:3px solid #facc15}
-.mc-item.zero{border-left:3px solid #334155}
-.mc-label{flex:1;font-size:.75rem;font-weight:600;color:#94a3b8}
-.mc-badge{font-size:.72rem;font-weight:700;min-width:36px;text-align:center;
-  background:#0f0f1a;border-radius:6px;padding:3px 6px}
-.mc-badge.met{color:#4ade80}.mc-badge.partial{color:#facc15}.mc-badge.zero{color:#334155}
-/* Muscles label on exercise cards */
-.ex-muscles{font-size:.67rem;color:#475569;margin-top:1px;letter-spacing:.01em}
-/* Progress tab */
-.prog-detail-body{padding:12px 0 4px}
-.prog-metric{background:#0f0f1a;border-radius:8px;padding:10px;text-align:center}
-.pm-val{font-size:1.1rem;font-weight:700;color:#818cf8}
-.pm-lbl{font-size:.68rem;color:#475569;margin-top:2px}
-.trend-up{color:#4ade80}.trend-down{color:#f87171}.trend-neutral{color:#64748b}
-@keyframes prGlow{0%,100%{background:#0f0f1a}50%{background:#451a03}}
-.pr-flash{animation:prGlow 1.2s ease 3}
-::-webkit-scrollbar{width:3px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:#334155;border-radius:2px}
-input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
-input[type=number]{-moz-appearance:textfield}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0f172a;--surface:#1e293b;--surface2:#334155;--border:#475569;--text:#f1f5f9;--muted:#94a3b8;--accent:#6366f1;--green:#22c55e;--red:#ef4444;--yellow:#facc15;--orange:#f97316}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;max-width:480px;margin:0 auto;padding-bottom:70px}
+button{cursor:pointer;border:none;background:none;color:inherit;font:inherit}
+input{font:inherit;color:inherit;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text)}
+input:focus{outline:2px solid var(--accent)}
+.card{background:var(--surface);border-radius:12px;padding:16px;margin:8px 12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:10px;font-weight:600;font-size:14px;transition:opacity .15s}
+.btn:active{opacity:.7}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-green{background:var(--green);color:#000}
+.btn-red{background:var(--red);color:#fff}
+.btn-ghost{background:var(--surface2);color:var(--text)}
+.btn-sm{padding:6px 12px;font-size:13px;border-radius:8px}
+.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+#nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:100}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;font-size:10px;color:var(--muted);transition:color .15s}
+.nav-btn.active{color:var(--accent)}
+.nav-btn svg{width:22px;height:22px}
+.header{padding:16px 12px 4px;display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:20px;font-weight:700}
+.section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:12px 12px 4px}
+.ex-card{background:var(--surface);border-radius:12px;margin:6px 12px;overflow:hidden}
+.ex-header{display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer}
+.ex-icon{font-size:22px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px}
+.ex-info{flex:1;min-width:0}
+.ex-name{font-weight:700;font-size:15px}
+.ex-muscles{font-size:11px;color:var(--muted)}
+.ex-body{padding:0 12px 12px}
+.set-row{display:grid;grid-template-columns:28px 1fr 1fr 80px;gap:6px;align-items:center;margin-bottom:6px}
+.set-num{text-align:center;color:var(--muted);font-size:13px;font-weight:600}
+.set-input{width:100%;text-align:center;padding:8px 4px}
+.set-done{display:flex;gap:4px}
+.set-done button{flex:1;padding:8px;border-radius:8px;font-size:13px;font-weight:600;background:var(--surface2)}
+.set-done button.done{background:var(--green);color:#000}
+.pr-badge{background:var(--yellow);color:#000;border-radius:4px;font-size:10px;font-weight:700;padding:1px 4px;margin-left:4px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:var(--surface);border-radius:16px;padding:20px;width:100%;max-width:340px}
+.modal h3{font-size:17px;font-weight:700;margin-bottom:8px}
+.modal p{color:var(--muted);font-size:14px;margin-bottom:16px}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end}
+.timer-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 12px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50}
+.timer-ring{position:relative;width:44px;height:44px}
+.timer-ring svg{transform:rotate(-90deg)}
+.timer-ring-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.sparkline{height:40px;width:100%}
+.progress-ex{background:var(--surface);border-radius:12px;margin:6px 12px;overflow:hidden}
+.progress-header{padding:12px;cursor:pointer;display:flex;align-items:center;gap:8px}
+.progress-body{padding:0 12px 12px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;background:var(--surface2)}
+.mg-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)}
+.mg-row:last-child{border-bottom:none}
+.mg-bar-bg{flex:1;background:var(--surface2);border-radius:4px;height:6px;overflow:hidden}
+.mg-bar-fill{height:100%;border-radius:4px;background:var(--accent)}
+.toggle{display:flex;background:var(--surface2);border-radius:10px;padding:3px;gap:2px}
+.toggle button{flex:1;padding:6px 10px;border-radius:7px;font-size:13px;font-weight:600;color:var(--muted)}
+.toggle button.active{background:var(--surface);color:var(--text)}
+.hist-session{background:var(--surface);border-radius:12px;margin:6px 12px;overflow:hidden}
+.hist-header{padding:12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between}
+.hist-body{padding:0 12px 12px}
+.cur-weight-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.cur-weight-row:last-child{border-bottom:none}
+.suggestion-box{background:var(--surface2);border-radius:8px;padding:8px 10px;font-size:13px;margin-bottom:10px;color:var(--muted)}
+.suggestion-box strong{color:var(--text)}
+.elapsed{font-size:12px;color:var(--muted)}
+.routine-item{display:flex;align-items:center;gap:8px;padding:10px;background:var(--surface2);border-radius:8px;margin-bottom:6px}
+.routine-item input{width:50px;text-align:center;padding:4px}
+.stat-row{display:flex;gap:8px;margin:4px 12px}
+.stat-box{flex:1;background:var(--surface);border-radius:10px;padding:12px;text-align:center}
+.stat-box .val{font-size:22px;font-weight:700}
+.stat-box .lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.empty{text-align:center;color:var(--muted);padding:32px 16px;font-size:14px}
+@media(prefers-color-scheme:dark){body{color:var(--text)}}
 </style>
 </head>
 <body>
 <div id="app"></div>
-<div id="toast"></div>
-
 <script>
-'use strict';
-
-// ── CONFIG ────────────────────────────────────────────────────────────────────
-const LS_KEY = 'barbell-coach-v2';
-// Progressive overload: need OVERLOAD_SESSIONS sessions AT OR ABOVE target reps
-// within the last LOOK_BACK sessions for this exercise.
+// ── Constants ──────────────────────────────────────────────────────────────
+const REST_SEC = 90;
 const OVERLOAD_SESSIONS = 2;
 const LOOK_BACK = 5;
-const REST_SEC = 60;
 
 const EXERCISE_CFG = {
-  'Barbell Bench Press':          {icon:'🏋️',cat:'upper',inc:5,color:'#ef4444',muscles:'Chest'},
-  'Incline Barbell Bench Press':  {icon:'📈',cat:'upper',inc:5,color:'#fb923c',muscles:'Chest · Upper Chest'},
-  'Close Grip Bench Press':       {icon:'💎',cat:'upper',inc:5,color:'#f97316',muscles:'Chest · Triceps'},
-  'Barbell Skull Crushers':       {icon:'💀',cat:'upper',inc:5,color:'#c084fc',muscles:'Triceps'},
-  'Barbell Bicep Curl':           {icon:'💪',cat:'upper',inc:5,color:'#a855f7',muscles:'Biceps'},
-  'Barbell Overhead Press':       {icon:'⬆️',cat:'upper',inc:5,color:'#3b82f6',muscles:'Shoulders · Triceps'},
-  'Barbell Bent Over Row':        {icon:'🔄',cat:'upper',inc:5,color:'#06b6d4',muscles:'Back · Biceps'},
-  'Barbell Shrug':                {icon:'🤷',cat:'upper',inc:5,color:'#38bdf8',muscles:'Traps'},
-  'Lat Pulldown':                 {icon:'🎯',cat:'upper',inc:5,color:'#0ea5e9',muscles:'Lats · Biceps'},
-  'Pullup':                       {icon:'🔝',cat:'upper',inc:0,color:'#2dd4bf',muscles:'Lats · Biceps'},
-  'Barbell Upright Row':          {icon:'↕️',cat:'upper',inc:5,color:'#60a5fa',muscles:'Shoulders · Traps'},
-  'Barbell Back Squat':           {icon:'🦵',cat:'lower',inc:5,color:'#22c55e',muscles:'Quads · Glutes'},
-  'Romanian Deadlift':            {icon:'🔻',cat:'lower',inc:5,color:'#facc15',muscles:'Hamstrings · Glutes'},
-  'Barbell Hip Thrust':           {icon:'🍑',cat:'lower',inc:5,color:'#f472b6',muscles:'Glutes'},
-  'Barbell Deadlift':             {icon:'⚡',cat:'lower',inc:5,color:'#4ade80',muscles:'Back · Hamstrings'},
-  'Barbell Good Morning':         {icon:'🌅',cat:'lower',inc:5,color:'#a3e635',muscles:'Hamstrings · Lower Back'},
-  'Barbell Lunges':               {icon:'🚶',cat:'lower',inc:5,color:'#86efac',muscles:'Quads · Glutes'},
-  'Barbell Front Squat':          {icon:'🏅',cat:'lower',inc:5,color:'#34d399',muscles:'Quads · Core'},
-  'Barbell Sumo Deadlift':        {icon:'🏆',cat:'lower',inc:5,color:'#fde68a',muscles:'Glutes · Hamstrings'},
-  'Ab Wheel Rollouts':            {icon:'⭕',cat:'core', inc:0, color:'#818cf8',muscles:'Core · Hip Flexors'},
-  'Plank':                        {icon:'🧱',cat:'core', inc:0, color:'#6366f1',muscles:'Core'},
+  'Barbell Bench Press':         {icon:'🏋️',cat:'upper',inc:5,color:'#ef4444',muscles:'Chest'},
+  'Incline Barbell Bench Press': {icon:'📈',cat:'upper',inc:5,color:'#fb923c',muscles:'Chest · Upper Chest'},
+  'Close Grip Bench Press':      {icon:'💎',cat:'upper',inc:5,color:'#f97316',muscles:'Chest · Triceps'},
+  'Barbell Skull Crushers':      {icon:'💀',cat:'upper',inc:5,color:'#c084fc',muscles:'Triceps'},
+  'Barbell Bicep Curl':          {icon:'💪',cat:'upper',inc:5,color:'#a855f7',muscles:'Biceps'},
+  'Barbell Overhead Press':      {icon:'⬆️',cat:'upper',inc:5,color:'#3b82f6',muscles:'Shoulders · Triceps'},
+  'Barbell Bent Over Row':       {icon:'🔄',cat:'upper',inc:5,color:'#06b6d4',muscles:'Back · Biceps'},
+  'Barbell Shrug':               {icon:'🤷',cat:'upper',inc:5,color:'#38bdf8',muscles:'Traps'},
+  'Lat Pulldown':                {icon:'🎯',cat:'upper',inc:5,color:'#0ea5e9',muscles:'Lats · Biceps'},
+  'Pullup':                      {icon:'🔝',cat:'upper',inc:0,color:'#2dd4bf',muscles:'Lats · Biceps'},
+  'Barbell Upright Row':         {icon:'↕️',cat:'upper',inc:5,color:'#60a5fa',muscles:'Shoulders · Traps'},
+  'Barbell Back Squat':          {icon:'🦵',cat:'lower',inc:5,color:'#22c55e',muscles:'Quads · Glutes'},
+  'Romanian Deadlift':           {icon:'🔻',cat:'lower',inc:5,color:'#facc15',muscles:'Hamstrings · Glutes'},
+  'Barbell Hip Thrust':          {icon:'🍑',cat:'lower',inc:5,color:'#f472b6',muscles:'Glutes'},
+  'Barbell Deadlift':            {icon:'⚡',cat:'lower',inc:5,color:'#4ade80',muscles:'Back · Hamstrings'},
+  'Barbell Good Morning':        {icon:'🌅',cat:'lower',inc:5,color:'#a3e635',muscles:'Hamstrings · Lower Back'},
+  'Barbell Lunges':              {icon:'🚶',cat:'lower',inc:5,color:'#86efac',muscles:'Quads · Glutes'},
+  'Barbell Front Squat':         {icon:'🏅',cat:'lower',inc:5,color:'#34d399',muscles:'Quads · Core'},
+  'Barbell Sumo Deadlift':       {icon:'🏆',cat:'lower',inc:5,color:'#fde68a',muscles:'Glutes · Hamstrings'},
+  'Core':                        {icon:'⭕',cat:'core', inc:0, color:'#818cf8',muscles:'Core · Hip Flexors'},
+  'Plank':                       {icon:'🧱',cat:'core', inc:0, color:'#6366f1',muscles:'Core'},
 };
-const ALL_EXERCISES = Object.keys(EXERCISE_CFG);
 
 const DEFAULT_ROUTINE = [
+  {name:'Barbell Back Squat',          sets:3, targetReps:8},
   {name:'Barbell Bench Press',         sets:3, targetReps:8},
   {name:'Incline Barbell Bench Press', sets:3, targetReps:8},
+  {name:'Barbell Overhead Press',      sets:3, targetReps:8},
+  {name:'Romanian Deadlift',           sets:3, targetReps:10},
+  {name:'Barbell Hip Thrust',          sets:3, targetReps:10},
+  {name:'Lat Pulldown',                sets:3, targetReps:8},
+  {name:'Barbell Bent Over Row',       sets:3, targetReps:8},
   {name:'Close Grip Bench Press',      sets:2, targetReps:10},
   {name:'Barbell Skull Crushers',      sets:3, targetReps:10},
   {name:'Barbell Bicep Curl',          sets:2, targetReps:10},
-  {name:'Barbell Bent Over Row',       sets:3, targetReps:8},
-  {name:'Lat Pulldown',                sets:3, targetReps:10},
-  {name:'Barbell Overhead Press',      sets:3, targetReps:8},
-  {name:'Barbell Back Squat',          sets:3, targetReps:8},
-  {name:'Romanian Deadlift',           sets:3, targetReps:10},
-  {name:'Barbell Hip Thrust',          sets:3, targetReps:10},
-  {name:'Ab Wheel Rollouts',           sets:3, targetReps:'8-10'},
+  {name:'Core',                        sets:3, targetReps:'8-10'},
 ];
 
-// ── SEED SESSIONS ─────────────────────────────────────────────────────────────
-const SEED_SESSIONS = [
-  {id:'s17924060236371b93',date:'2026-10-19',type:'default',label:'Full Body',startTime:1792406023637,notes:'',exercises:[
-    {name:'Barbell Overhead Press', targetSets:3,targetReps:8, sets:[{w:130,r:8,n:''},{w:130,r:7,n:''},{w:130,r:6,n:''}]},
-    {name:'Barbell Back Squat',     targetSets:3,targetReps:8, sets:[{w:210,r:8,n:''},{w:210,r:8,n:''},{w:210,r:8,n:''}]},
-    {name:'Romanian Deadlift',      targetSets:3,targetReps:10,sets:[{w:200,r:10,n:''},{w:200,r:10,n:''},{w:200,r:10,n:''}]},
-    {name:'Barbell Hip Thrust',     targetSets:3,targetReps:10,sets:[{w:190,r:10,n:''},{w:190,r:10,n:''},{w:190,r:10,n:''}]},
-    {name:'Ab Wheel Rollouts',      targetSets:3,targetReps:'8-10',sets:[{w:0,r:10,n:''},{w:0,r:10,n:''},{w:0,r:10,n:''}]},
-  ]},
-  {id:'s179214133857454fy',date:'2026-10-16',type:'default',label:'Full Body',startTime:1792141338574,notes:'',exercises:[
-    {name:'Barbell Bench Press',        targetSets:3,targetReps:8, sets:[{w:170,r:8,n:''},{w:170,r:8,n:''},{w:170,r:8,n:''}]},
-    {name:'Incline Barbell Bench Press',targetSets:3,targetReps:8, sets:[{w:155,r:8,n:''},{w:155,r:7,n:''},{w:155,r:5,n:''}]},
-    {name:'Close Grip Bench Press',     targetSets:2,targetReps:10,sets:[{w:140,r:10,n:''},{w:140,r:10,n:''}]},
-    {name:'Barbell Skull Crushers',     targetSets:3,targetReps:10,sets:[{w:70,r:10,n:''},{w:70,r:10,n:''},{w:70,r:9,n:''}]},
-    {name:'Barbell Bicep Curl',         targetSets:2,targetReps:10,sets:[{w:80,r:10,n:''},{w:80,r:9,n:''}]},
-    {name:'Barbell Bent Over Row',      targetSets:3,targetReps:8, sets:[{w:180,r:8,n:''},{w:180,r:8,n:''},{w:180,r:7,n:''}]},
-    {name:'Ab Wheel Rollouts',          targetSets:3,targetReps:'8-10',sets:[{w:0,r:15,n:''},{w:0,r:15,n:''},{w:0,r:15,n:''}]},
-  ]},
-  {id:'s179197218697412qk',date:'2026-10-14',type:'default',label:'Full Body',startTime:1791972186975,notes:'',exercises:[
-    {name:'Barbell Overhead Press',targetSets:3,targetReps:8, sets:[{w:130,r:8,n:''},{w:130,r:7,n:''},{w:130,r:4,n:''}]},
-    {name:'Barbell Back Squat',    targetSets:3,targetReps:8, sets:[{w:205,r:8,n:''},{w:205,r:8,n:''},{w:205,r:7,n:''}]},
-    {name:'Romanian Deadlift',     targetSets:3,targetReps:10,sets:[{w:195,r:10,n:''},{w:195,r:10,n:''},{w:195,r:10,n:''}]},
-    {name:'Barbell Hip Thrust',    targetSets:3,targetReps:10,sets:[{w:185,r:10,n:''},{w:185,r:10,n:''},{w:185,r:10,n:''}]},
-    {name:'Ab Wheel Rollouts',     targetSets:3,targetReps:'8-10',sets:[{w:0,r:10,n:''},{w:0,r:10,n:''},{w:0,r:10,n:''}]},
-  ]},
-  {id:'s1791801235908j6g2',date:'2026-10-12',type:'default',label:'Full Body',startTime:1791801235908,notes:'',exercises:[
-    {name:'Barbell Bench Press',        targetSets:3,targetReps:8, sets:[{w:170,r:8,n:''},{w:170,r:8,n:''},{w:170,r:7,n:''}]},
-    {name:'Close Grip Bench Press',     targetSets:2,targetReps:10,sets:[{w:140,r:10,n:''},{w:140,r:8,n:''}]},
-    {name:'Barbell Skull Crushers',     targetSets:3,targetReps:10,sets:[{w:65,r:10,n:''},{w:65,r:10,n:''},{w:65,r:10,n:''}]},
-    {name:'Barbell Bicep Curl',         targetSets:2,targetReps:10,sets:[{w:80,r:10,n:''},{w:80,r:10,n:''}]},
-    {name:'Barbell Bent Over Row',      targetSets:3,targetReps:8, sets:[{w:175,r:8,n:''},{w:175,r:8,n:''},{w:175,r:8,n:''}]},
-    {name:'Incline Barbell Bench Press',targetSets:3,targetReps:8, sets:[{w:150,r:8,n:''},{w:150,r:8,n:''},{w:150,r:8,n:''}]},
-  ]},
-  {id:'s1791536772584j4h6',date:'2026-10-09',type:'default',label:'Full Body',startTime:1791536772584,notes:'',exercises:[
-    {name:'Barbell Overhead Press',     targetSets:3,targetReps:8, sets:[{w:125,r:8,n:''},{w:125,r:8,n:''},{w:125,r:6,n:''}]},
-    {name:'Barbell Back Squat',         targetSets:3,targetReps:8, sets:[{w:200,r:8,n:''},{w:200,r:10,n:''},{w:200,r:8,n:''}]},
-    {name:'Romanian Deadlift',          targetSets:3,targetReps:10,sets:[{w:190,r:10,n:''},{w:190,r:10,n:''},{w:190,r:10,n:''}]},
-    {name:'Barbell Hip Thrust',         targetSets:3,targetReps:10,sets:[{w:185,r:10,n:''},{w:185,r:10,n:''},{w:185,r:10,n:''}]},
-    {name:'Incline Barbell Bench Press',targetSets:3,targetReps:8, sets:[{w:145,r:8,n:''},{w:145,r:8,n:''},{w:145,r:8,n:''}]},
-    {name:'Ab Wheel Rollouts',          targetSets:3,targetReps:'8-10',sets:[{w:0,r:15,n:''},{w:0,r:15,n:''},{w:0,r:15,n:''}]},
-  ]},
-  {id:'s1791363813196miex',date:'2026-10-07',type:'default',label:'Full Body',startTime:1791363813196,notes:'',exercises:[
-    {name:'Ab Wheel Rollouts',          targetSets:3,targetReps:'8-10',sets:[{w:0,r:10,n:''},{w:0,r:10,n:''},{w:0,r:10,n:''}]},
-    {name:'Barbell Bench Press',        targetSets:3,targetReps:8, sets:[{w:170,r:10,n:''},{w:170,r:8,n:''},{w:170,r:7,n:''}]},
-    {name:'Incline Barbell Bench Press',targetSets:3,targetReps:8, sets:[{w:140,r:8,n:''},{w:140,r:7,n:''},{w:140,r:8,n:''}]},
-    {name:'Close Grip Bench Press',     targetSets:2,targetReps:10,sets:[{w:140,r:10,n:''},{w:140,r:9,n:''}]},
-    {name:'Barbell Skull Crushers',     targetSets:3,targetReps:10,sets:[{w:55,r:10,n:''},{w:55,r:10,n:''},{w:55,r:10,n:''}]},
-    {name:'Barbell Bicep Curl',         targetSets:2,targetReps:10,sets:[{w:80,r:8,n:''},{w:80,r:8,n:''}]},
-    {name:'Barbell Bent Over Row',      targetSets:3,targetReps:8, sets:[{w:170,r:8,n:''},{w:170,r:8,n:''},{w:170,r:8,n:''}]},
-  ]},
-  {id:'s1791196438073sroi',date:'2026-10-05',type:'default',label:'Full Body',startTime:1791196438073,notes:'',exercises:[
-    {name:'Barbell Skull Crushers',     targetSets:3,targetReps:10,sets:[{w:55,r:10,n:''},{w:55,r:10,n:''},{w:55,r:9,n:''}]},
-    {name:'Barbell Bicep Curl',         targetSets:2,targetReps:10,sets:[{w:80,r:10,n:''},{w:80,r:8,n:''}]},
-    {name:'Barbell Overhead Press',     targetSets:3,targetReps:8, sets:[{w:120,r:9,n:''},{w:120,r:7,n:''},{w:120,r:6,n:''}]},
-    {name:'Barbell Back Squat',         targetSets:3,targetReps:8, sets:[{w:195,r:8,n:''},{w:195,r:8,n:''},{w:195,r:8,n:''}]},
-    {name:'Barbell Bench Press',        targetSets:3,targetReps:8, sets:[{w:170,r:8,n:''},{w:170,r:8,n:''},{w:170,r:6,n:''}]},
-    {name:'Incline Barbell Bench Press',targetSets:3,targetReps:8, sets:[{w:135,r:8,n:''},{w:135,r:8,n:''},{w:135,r:8,n:''}]},
-    {name:'Close Grip Bench Press',     targetSets:2,targetReps:10,sets:[{w:135,r:8,n:''},{w:135,r:8,n:''}]},
-    {name:'Barbell Bent Over Row',      targetSets:3,targetReps:8, sets:[{w:165,r:8,n:''},{w:165,r:8,n:''},{w:165,r:4,n:''}]},
-    {name:'Romanian Deadlift',          targetSets:3,targetReps:10,sets:[{w:185,r:10,n:''},{w:185,r:10,n:''},{w:185,r:10,n:''}]},
-    {name:'Barbell Hip Thrust',         targetSets:3,targetReps:10,sets:[{w:185,r:8,n:''},{w:185,r:10,n:''},{w:185,r:10,n:''}]},
-  ]},
-  {id:'s179093185148363pk',date:'2026-10-02',type:'default',label:'Full Body',startTime:1790931851483,notes:'',exercises:[
-    {name:'Barbell Bent Over Row',      targetSets:3,targetReps:8, sets:[{w:160,r:8,n:''},{w:160,r:8,n:''},{w:160,r:8,n:''}]},
-    {name:'Romanian Deadlift',          targetSets:3,targetReps:10,sets:[{w:185,r:8,n:''},{w:185,r:8,n:''},{w:185,r:10,n:''}]},
-    {name:'Barbell Hip Thrust',         targetSets:3,targetReps:10,sets:[{w:185,r:8,n:''},{w:185,r:8,n:''},{w:185,r:8,n:''}]},
-    {name:'Barbell Bench Press',        targetSets:3,targetReps:8, sets:[{w:165,r:9,n:''},{w:165,r:8,n:''},{w:165,r:7,n:''}]},
-    {name:'Incline Barbell Bench Press',targetSets:3,targetReps:8, sets:[{w:130,r:10,n:''},{w:130,r:8,n:''},{w:130,r:8,n:''}]},
-    {name:'Close Grip Bench Press',     targetSets:2,targetReps:10,sets:[{w:130,r:10,n:''},{w:130,r:9,n:''}]},
-    {name:'Ab Wheel Rollouts',          targetSets:3,targetReps:'8-10',sets:[{w:0,r:10,n:''},{w:0,r:10,n:''},{w:0,r:10,n:''}]},
-  ]},
-  {id:'s1790760556548fiym',date:'2026-09-30',type:'default',label:'Full Body',startTime:1790760556548,notes:'',exercises:[
-    {name:'Incline Barbell Bench Press',targetSets:3,targetReps:8, sets:[{w:125,r:11,n:''},{w:125,r:10,n:''},{w:125,r:9,n:''}]},
-    {name:'Close Grip Bench Press',     targetSets:2,targetReps:10,sets:[{w:125,r:10,n:''},{w:125,r:10,n:''}]},
-    {name:'Barbell Bench Press',        targetSets:3,targetReps:8, sets:[{w:160,r:8,n:''},{w:160,r:8,n:''},{w:160,r:5,n:''}]},
-    {name:'Barbell Skull Crushers',     targetSets:3,targetReps:10,sets:[{w:55,r:10,n:''},{w:55,r:10,n:''},{w:55,r:8,n:''}]},
-    {name:'Barbell Bicep Curl',         targetSets:2,targetReps:10,sets:[{w:80,r:10,n:''},{w:80,r:7,n:''}]},
-    {name:'Barbell Overhead Press',     targetSets:3,targetReps:8, sets:[{w:115,r:8,n:''},{w:115,r:7,n:''},{w:115,r:6,n:''}]},
-    {name:'Barbell Back Squat',         targetSets:3,targetReps:8, sets:[{w:190,r:8,n:''},{w:190,r:8,n:''},{w:190,r:8,n:''}]},
-    {name:'Ab Wheel Rollouts',          targetSets:3,targetReps:'8-10',sets:[{w:0,r:15,n:''},{w:0,r:15,n:''},{w:0,r:15,n:''}]},
-  ]},
-  {id:'s17905881204520ilx',date:'2026-09-28',type:'default',label:'Full Body',startTime:1790588120452,notes:'',exercises:[
-    {name:'Barbell Skull Crushers',     targetSets:3,targetReps:10,sets:[{w:50,r:10,n:''},{w:55,r:10,n:''},{w:50,r:8,n:''}]},
-    {name:'Barbell Bicep Curl',         targetSets:2,targetReps:10,sets:[{w:80,r:10,n:''},{w:80,r:7,n:''}]},
-    {name:'Barbell Bent Over Row',      targetSets:3,targetReps:8, sets:[{w:155,r:10,n:''},{w:155,r:10,n:''},{w:155,r:8,n:''}]},
-    {name:'Barbell Overhead Press',     targetSets:3,targetReps:8, sets:[{w:110,r:8,n:''},{w:110,r:8,n:''},{w:110,r:8,n:''}]},
-    {name:'Barbell Bench Press',        targetSets:3,targetReps:8, sets:[{w:155,r:8,n:''},{w:155,r:8,n:''},{w:155,r:6,n:''}]},
-    {name:'Barbell Back Squat',         targetSets:3,targetReps:8, sets:[{w:185,r:10,n:''},{w:185,r:8,n:''},{w:185,r:8,n:''}]},
-    {name:'Romanian Deadlift',          targetSets:3,targetReps:10,sets:[{w:185,r:10,n:''},{w:185,r:10,n:''},{w:185,r:10,n:''}]},
-    {name:'Barbell Hip Thrust',         targetSets:3,targetReps:10,sets:[{w:185,r:10,n:''},{w:185,r:8,n:''},{w:185,r:8,n:''}]},
-    {name:'Ab Wheel Rollouts',          targetSets:3,targetReps:'8-10',sets:[{w:0,r:10,n:''},{w:0,r:10,n:''},{w:0,r:10,n:''}]},
-  ]},
-  {id:'s1790333520815tdpy',date:'2026-09-25',type:'default',label:'Full Body',startTime:1790333520815,notes:'',exercises:[
-    {name:'Barbell Back Squat',         targetSets:3,targetReps:8, sets:[{w:180,r:8,n:''},{w:180,r:8,n:''},{w:180,r:8,n:''}]},
-    {name:'Romanian Deadlift',          targetSets:3,targetReps:10,sets:[{w:185,r:8,n:''},{w:185,r:8,n:''},{w:185,r:8,n:''}]},
-    {name:'Barbell Hip Thrust',         targetSets:3,targetReps:10,sets:[{w:185,r:8,n:''},{w:185,r:8,n:''},{w:185,r:8,n:''}]},
-    {name:'Ab Wheel Rollouts',          targetSets:3,targetReps:'8-10',sets:[{w:0,r:10,n:''},{w:0,r:10,n:''},{w:0,r:10,n:''}]},
-    {name:'Barbell Bench Press',        targetSets:3,targetReps:8, sets:[{w:150,r:8,n:''},{w:150,r:8,n:''},{w:150,r:8,n:''}]},
-    {name:'Incline Barbell Bench Press',targetSets:3,targetReps:8, sets:[{w:115,r:8,n:''},{w:115,r:8,n:''},{w:120,r:8,n:''}]},
-    {name:'Close Grip Bench Press',     targetSets:2,targetReps:10,sets:[{w:120,r:10,n:''},{w:120,r:8,n:''}]},
-  ]},
-  {id:'s17901608153900i2w',date:'2026-09-23',type:'default',label:'Full Body',startTime:1790160815390,notes:'',exercises:[
-    {name:'Barbell Bench Press',        targetSets:3,targetReps:8, sets:[{w:145,r:10,n:''},{w:145,r:10,n:''}]},
-    {name:'Incline Barbell Bench Press',targetSets:3,targetReps:8, sets:[{w:95,r:8,n:''},{w:115,r:8,n:''},{w:115,r:9,n:''}]},
-    {name:'Close Grip Bench Press',     targetSets:2,targetReps:10,sets:[{w:115,r:10,n:''},{w:115,r:10,n:''}]},
-    {name:'Barbell Skull Crushers',     targetSets:3,targetReps:10,sets:[{w:40,r:10,n:''},{w:50,r:8,n:''},{w:50,r:8,n:''}]},
-    {name:'Barbell Bicep Curl',         targetSets:2,targetReps:10,sets:[{w:80,r:8,n:''},{w:80,r:7,n:''}]},
-    {name:'Barbell Bent Over Row',      targetSets:3,targetReps:8, sets:[{w:155,r:10,n:''},{w:155,r:10,n:''}]},
-    {name:'Barbell Overhead Press',     targetSets:3,targetReps:8, sets:[{w:105,r:10,n:''},{w:105,r:8,n:''}]},
-  ]},
-  {id:'s1789906854240nc20',date:'2026-09-20',type:'adhoc',label:'Ad-hoc Session',startTime:1789906854240,notes:'',exercises:[
-    {name:'Barbell Bench Press',     targetSets:3,targetReps:8, sets:[{w:145,r:8,n:''},{w:145,r:8,n:''},{w:145,r:8,n:''}]},
-    {name:'Close Grip Bench Press',  targetSets:3,targetReps:8, sets:[{w:115,r:12,n:''},{w:115,r:12,n:''},{w:115,r:0,n:''}]},
-    {name:'Barbell Bicep Curl',      targetSets:3,targetReps:8, sets:[{w:85,r:10,n:''},{w:85,r:8,n:''},{w:85,r:0,n:''}]},
-    {name:'Barbell Overhead Press',  targetSets:3,targetReps:8, sets:[{w:105,r:10,n:''},{w:105,r:10,n:''},{w:105,r:0,n:''}]},
-    {name:'Barbell Bent Over Row',   targetSets:3,targetReps:8, sets:[{w:155,r:0,n:''},{w:155,r:0,n:''},{w:155,r:0,n:''}]},
-    {name:'Barbell Back Squat',      targetSets:3,targetReps:10,sets:[{w:175,r:0,n:''},{w:175,r:0,n:''},{w:175,r:0,n:''}]},
-    {name:'Romanian Deadlift',       targetSets:3,targetReps:10,sets:[{w:185,r:0,n:''},{w:185,r:0,n:''},{w:185,r:0,n:''}]},
-  ]},
-  {id:'s1789728791604bx21',date:'2026-09-18',type:'default',label:'Full Body',startTime:1789728791604,notes:'',exercises:[
-    {name:'Barbell Bench Press',targetSets:3,targetReps:8,sets:[{w:145,r:9,n:''},{w:145,r:8,n:''},{w:145,r:9,n:''}]},
-    {name:'Barbell Overhead Press',targetSets:3,targetReps:8,sets:[{w:105,r:8,n:''},{w:105,r:8,n:''},{w:105,r:7,n:''}]},
-    {name:'Barbell Bent Over Row',targetSets:3,targetReps:8,sets:[{w:155,r:8,n:''},{w:155,r:8,n:''},{w:155,r:7,n:''}]},
-    {name:'Romanian Deadlift',targetSets:3,targetReps:10,sets:[{w:185,r:8,n:''},{w:185,r:8,n:''},{w:185,r:10,n:''}]},
-    {name:'Ab Wheel Rollouts',targetSets:3,targetReps:'8-10',sets:[{w:0,r:0,n:''},{w:0,r:0,n:''},{w:0,r:0,n:''}]},
-  ]},
-  {id:'s1789378992733m5ea',date:'2026-09-14',type:'default',label:'Full Body',startTime:1789378992733,notes:'',exercises:[
-    {name:'Barbell Bench Press',targetSets:3,targetReps:8,sets:[{w:145,r:8,n:''},{w:145,r:10,n:''},{w:145,r:10,n:''}]},
-    {name:'Close Grip Bench Press',targetSets:2,targetReps:10,sets:[{w:115,r:10,n:''},{w:115,r:12,n:''}]},
-    {name:'Barbell Bicep Curl',targetSets:2,targetReps:10,sets:[{w:85,r:10,n:''},{w:85,r:7,n:''}]},
-    {name:'Barbell Overhead Press',targetSets:3,targetReps:8,sets:[{w:105,r:8,n:''},{w:105,r:8,n:''},{w:105,r:8,n:''}]},
-    {name:'Barbell Bent Over Row',targetSets:3,targetReps:8,sets:[{w:155,r:8,n:''},{w:155,r:8,n:''},{w:155,r:5,n:''}]},
-    {name:'Barbell Back Squat',targetSets:3,targetReps:8,sets:[{w:175,r:8,n:''},{w:175,r:8,n:''},{w:175,r:8,n:''}]},
-    {name:'Romanian Deadlift',targetSets:2,targetReps:10,sets:[{w:185,r:0,n:''},{w:185,r:0,n:''}]},
-  ]},
-  {id:'s1789123927573n778',date:'2026-09-11',type:'default',label:'Full Body',startTime:1789123927573,notes:'',exercises:[
-    {name:'Barbell Bench Press',targetSets:3,targetReps:8,sets:[{w:145,r:8,n:''},{w:145,r:8,n:''},{w:145,r:8,n:''}]},
-    {name:'Barbell Overhead Press',targetSets:3,targetReps:8,sets:[{w:105,r:8,n:''},{w:105,r:8,n:''},{w:105,r:8,n:''}]},
-    {name:'Barbell Bent Over Row',targetSets:3,targetReps:8,sets:[{w:155,r:8,n:''},{w:155,r:8,n:''},{w:155,r:6,n:''}]},
-    {name:'Romanian Deadlift',targetSets:3,targetReps:10,sets:[{w:185,r:10,n:''},{w:185,r:10,n:''},{w:185,r:10,n:''}]},
-    {name:'Ab Wheel Rollouts',targetSets:3,targetReps:'8-10',sets:[{w:0,r:10,n:''},{w:0,r:10,n:''},{w:0,r:10,n:''}]},
-  ]},
-  {id:'s1788780730715o8s8',date:'2026-09-07',type:'default',label:'Full Body',startTime:1788780730715,notes:'',exercises:[
-    {name:'Barbell Bench Press',targetSets:3,targetReps:8,sets:[{w:145,r:8,n:''},{w:145,r:8,n:''},{w:145,r:10,n:''}]},
-    {name:'Close Grip Bench Press',targetSets:2,targetReps:10,sets:[{w:115,r:10,n:''},{w:115,r:10,n:''}]},
-    {name:'Barbell Bicep Curl',targetSets:2,targetReps:10,sets:[{w:85,r:10,n:''},{w:85,r:10,n:''}]},
-    {name:'Barbell Overhead Press',targetSets:3,targetReps:8,sets:[{w:105,r:8,n:''},{w:105,r:8,n:''},{w:105,r:8,n:''}]},
-    {name:'Barbell Bent Over Row',targetSets:3,targetReps:8,sets:[{w:150,r:0,n:''},{w:150,r:0,n:''},{w:150,r:0,n:''}]},
-    {name:'Barbell Back Squat',targetSets:3,targetReps:8,sets:[{w:175,r:0,n:''},{w:175,r:0,n:''},{w:175,r:0,n:''}]},
-    {name:'Romanian Deadlift',targetSets:2,targetReps:10,sets:[{w:185,r:0,n:''},{w:185,r:0,n:''}]},
-  ]},
-  {id:'s1788519160934j2c8',date:'2026-09-04',type:'default',label:'Full Body',startTime:1788519160934,notes:'',exercises:[
-    {name:'Barbell Bench Press',targetSets:3,targetReps:8,sets:[{w:145,r:8,n:''},{w:145,r:8,n:''},{w:145,r:8,n:''}]},
-    {name:'Barbell Overhead Press',targetSets:3,targetReps:8,sets:[{w:105,r:8,n:''},{w:105,r:8,n:''},{w:105,r:6,n:''}]},
-    {name:'Barbell Bent Over Row',targetSets:3,targetReps:8,sets:[{w:150,r:8,n:''},{w:150,r:8,n:''},{w:150,r:7,n:''}]},
-    {name:'Romanian Deadlift',targetSets:3,targetReps:10,sets:[{w:185,r:8,n:''},{w:185,r:8,n:''},{w:185,r:10,n:''}]},
-    {name:'Ab Wheel Rollouts',targetSets:3,targetReps:'8-10',sets:[{w:0,r:10,n:''},{w:0,r:10,n:''},{w:0,r:10,n:''}]},
-  ]},
-  {id:'s1788172725418wosx',date:'2026-08-31',type:'default',label:'Full Body',startTime:1788172725418,notes:'',exercises:[
-    {name:'Barbell Bench Press',targetSets:3,targetReps:8,sets:[{w:145,r:8,n:''},{w:145,r:8,n:''},{w:145,r:10,n:''}]},
-    {name:'Close Grip Bench Press',targetSets:2,targetReps:10,sets:[{w:110,r:10,n:''},{w:110,r:12,n:''}]},
-    {name:'Barbell Bicep Curl',targetSets:2,targetReps:10,sets:[{w:85,r:10,n:''},{w:85,r:8,n:''}]},
-    {name:'Barbell Overhead Press',targetSets:3,targetReps:8,sets:[{w:105,r:9,n:''},{w:105,r:8,n:''},{w:105,r:6,n:''}]},
-    {name:'Barbell Bent Over Row',targetSets:3,targetReps:8,sets:[{w:150,r:8,n:''},{w:150,r:8,n:''},{w:150,r:8,n:''}]},
-    {name:'Barbell Back Squat',targetSets:3,targetReps:8,sets:[{w:175,r:8,n:''},{w:175,r:8,n:''},{w:175,r:8,n:''}]},
-    {name:'Romanian Deadlift',targetSets:2,targetReps:10,sets:[{w:185,r:10,n:''},{w:185,r:12,n:''}]},
-  ]},
-  {id:'s1787914200716aw1q',date:'2026-08-28',type:'default',label:'Full Body',startTime:1787914200716,notes:'',exercises:[
-    {name:'Barbell Bench Press',targetSets:3,targetReps:8,sets:[{w:145,r:8,n:''},{w:145,r:8,n:''},{w:145,r:7,n:''}]},
-    {name:'Barbell Overhead Press',targetSets:3,targetReps:8,sets:[{w:105,r:8,n:''},{w:105,r:7,n:''},{w:105,r:6,n:'Gassed from hiit'}]},
-    {name:'Barbell Bent Over Row',targetSets:3,targetReps:8,sets:[{w:150,r:8,n:''},{w:150,r:8,n:''},{w:150,r:6,n:'Again gassed'}]},
-    {name:'Romanian Deadlift',targetSets:3,targetReps:10,sets:[{w:185,r:8,n:''},{w:185,r:8,n:''},{w:185,r:8,n:''}]},
-    {name:'Ab Wheel Rollouts',targetSets:3,targetReps:'8-10',sets:[{w:0,r:10,n:''},{w:0,r:9,n:''},{w:0,r:10,n:''}]},
-  ]},
-  {id:'s1787567685265haul',date:'2026-08-24',type:'default',label:'Full Body',startTime:1787567685265,notes:'',exercises:[
-    {name:'Barbell Bench Press',targetSets:3,targetReps:8,sets:[{w:145,r:8,n:''},{w:145,r:8,n:''},{w:145,r:8,n:''}]},
-    {name:'Close Grip Bench Press',targetSets:2,targetReps:10,sets:[{w:110,r:10,n:''},{w:110,r:10,n:''}]},
-    {name:'Barbell Bicep Curl',targetSets:2,targetReps:10,sets:[{w:85,r:10,n:''},{w:85,r:10,n:''}]},
-    {name:'Barbell Overhead Press',targetSets:3,targetReps:8,sets:[{w:95,r:8,n:''},{w:105,r:8,n:''},{w:105,r:8,n:'25 and 5 each side'}]},
-    {name:'Barbell Bent Over Row',targetSets:3,targetReps:8,sets:[{w:150,r:8,n:''},{w:150,r:8,n:''},{w:150,r:8,n:''}]},
-    {name:'Barbell Back Squat',targetSets:3,targetReps:8,sets:[{w:175,r:8,n:''},{w:175,r:8,n:''},{w:175,r:8,n:''}]},
-    {name:'Romanian Deadlift',targetSets:2,targetReps:10,sets:[{w:185,r:10,n:''},{w:185,r:10,n:''}]},
-  ]},
-  {id:'s1787313162703qvwb',date:'2026-08-21',type:'default',label:'Full Body',startTime:1787313162703,notes:'',exercises:[
-    {name:'Barbell Bench Press',targetSets:3,targetReps:8,sets:[{w:145,r:8,n:''},{w:145,r:8,n:''},{w:145,r:8,n:''}]},
-    {name:'Barbell Overhead Press',targetSets:3,targetReps:8,sets:[{w:95,r:8,n:''},{w:95,r:8,n:''},{w:95,r:8,n:''}]},
-    {name:'Barbell Bent Over Row',targetSets:3,targetReps:8,sets:[{w:150,r:8,n:''},{w:150,r:8,n:''},{w:150,r:8,n:''}]},
-    {name:'Romanian Deadlift',targetSets:3,targetReps:10,sets:[{w:180,r:8,n:''},{w:180,r:8,n:''},{w:180,r:8,n:''}]},
-    {name:'Ab Wheel Rollouts',targetSets:3,targetReps:'8-10',sets:[{w:0,r:10,n:''},{w:0,r:10,n:''},{w:0,r:10,n:''}]},
-  ]},
-  {id:'s1786963026547l1j1',date:'2026-08-17',type:'default',label:'Full Body',startTime:1786963026547,notes:'',exercises:[
-    {name:'Barbell Bench Press',targetSets:3,targetReps:8,sets:[{w:145,r:8,n:''},{w:145,r:8,n:''},{w:145,r:10,n:''}]},
-    {name:'Close Grip Bench Press',targetSets:2,targetReps:10,sets:[{w:110,r:10,n:''},{w:110,r:10,n:''}]},
-    {name:'Barbell Bicep Curl',targetSets:2,targetReps:10,sets:[{w:85,r:10,n:''},{w:85,r:8,n:''}]},
-    {name:'Barbell Overhead Press',targetSets:3,targetReps:8,sets:[{w:115,r:8,n:''},{w:115,r:8,n:''},{w:115,r:7,n:''}]},
-    {name:'Barbell Bent Over Row',targetSets:3,targetReps:8,sets:[{w:145,r:8,n:''},{w:150,r:8,n:''},{w:150,r:7,n:''}]},
-    {name:'Barbell Back Squat',targetSets:3,targetReps:8,sets:[{w:170,r:8,n:''},{w:175,r:8,n:''},{w:175,r:8,n:''}]},
-    {name:'Romanian Deadlift',targetSets:2,targetReps:10,sets:[{w:175,r:10,n:''},{w:180,r:10,n:''}]},
-  ]},
-  {id:'h7',date:'2026-08-10',type:'monday',label:'Monday',notes:'',exercises:[
-    {name:'Barbell Bench Press',targetSets:3,targetReps:8,sets:[{w:145,r:8,n:''},{w:145,r:8,n:''},{w:145,r:8,n:''}]},
-    {name:'Close Grip Bench Press',targetSets:2,targetReps:10,sets:[{w:105,r:10,n:''},{w:105,r:10,n:''}]},
-    {name:'Barbell Bicep Curl',targetSets:2,targetReps:10,sets:[{w:85,r:10,n:''},{w:85,r:6,n:''}]},
-    {name:'Barbell Overhead Press',targetSets:3,targetReps:8,sets:[{w:115,r:8,n:''},{w:115,r:6,n:''},{w:115,r:6,n:''}]},
-    {name:'Barbell Bent Over Row',targetSets:3,targetReps:8,sets:[{w:135,r:8,n:''},{w:145,r:8,n:''},{w:145,r:8,n:''}]},
-    {name:'Barbell Back Squat',targetSets:3,targetReps:8,sets:[{w:155,r:8,n:''},{w:155,r:8,n:''},{w:165,r:8,n:''}]},
-    {name:'Romanian Deadlift',targetSets:2,targetReps:10,sets:[{w:155,r:10,n:''},{w:175,r:10,n:''}]},
-    {name:'Ab Wheel Rollouts',targetSets:3,targetReps:'8-10',sets:[{w:0,r:0,n:''},{w:0,r:0,n:''},{w:0,r:0,n:''}]},
-  ]},
-  {id:'h6',date:'2026-08-08',type:'monday',label:'Monday (Sat)',notes:'',exercises:[
-    {name:'Barbell Bench Press',targetSets:3,targetReps:8,sets:[{w:135,r:8,n:''},{w:145,r:8,n:''},{w:145,r:9,n:''}]},
-    {name:'Close Grip Bench Press',targetSets:2,targetReps:10,sets:[{w:105,r:10,n:''},{w:105,r:10,n:''}]},
-    {name:'Barbell Bicep Curl',targetSets:2,targetReps:10,sets:[{w:85,r:10,n:''},{w:85,r:7,n:''}]},
-    {name:'Barbell Overhead Press',targetSets:3,targetReps:8,sets:[{w:115,r:8,n:''},{w:115,r:6,n:''},{w:105,r:6,n:''}]},
-    {name:'Barbell Bent Over Row',targetSets:3,targetReps:8,sets:[{w:125,r:8,n:''},{w:135,r:8,n:''},{w:135,r:9,n:''}]},
-    {name:'Barbell Back Squat',targetSets:3,targetReps:8,sets:[{w:145,r:8,n:''},{w:145,r:10,n:''},{w:155,r:9,n:''}]},
-    {name:'Romanian Deadlift',targetSets:2,targetReps:10,sets:[{w:155,r:12,n:''},{w:165,r:10,n:''}]},
-    {name:'Ab Wheel Rollouts',targetSets:3,targetReps:'8-10',sets:[{w:35,r:10,n:'Incline situp'},{w:35,r:10,n:''},{w:35,r:10,n:''}]},
-  ]},
-  {id:'h5',date:'2026-08-05',type:'monday',label:'Monday (Wed)',notes:'',exercises:[
-    {name:'Barbell Bench Press',targetSets:3,targetReps:8,sets:[{w:130,r:8,n:''},{w:130,r:8,n:''},{w:130,r:6,n:''}]},
-    {name:'Close Grip Bench Press',targetSets:2,targetReps:10,sets:[{w:90,r:10,n:''},{w:90,r:10,n:''}]},
-    {name:'Barbell Bicep Curl',targetSets:2,targetReps:10,sets:[{w:60,r:10,n:''},{w:60,r:10,n:''}]},
-    {name:'Barbell Overhead Press',targetSets:3,targetReps:8,sets:[{w:120,r:8,n:''},{w:120,r:8,n:''},{w:120,r:7,n:''}]},
-    {name:'Barbell Bent Over Row',targetSets:3,targetReps:8,sets:[{w:120,r:8,n:''},{w:120,r:8,n:''},{w:120,r:8,n:''}]},
-    {name:'Barbell Back Squat',targetSets:3,targetReps:8,sets:[{w:150,r:8,n:''},{w:140,r:8,n:''},{w:140,r:8,n:''}]},
-    {name:'Romanian Deadlift',targetSets:2,targetReps:10,sets:[{w:140,r:10,n:''},{w:140,r:10,n:''}]},
-    {name:'Ab Wheel Rollouts',targetSets:3,targetReps:'8-10',sets:[{w:0,r:10,n:''},{w:0,r:10,n:''},{w:0,r:10,n:''}]},
-  ]},
-  {id:'h4',date:'2026-08-03',type:'adhoc',label:'Ad-hoc (Mon)',notes:'',exercises:[
-    {name:'Barbell Bench Press',targetSets:3,targetReps:8,sets:[{w:120,r:8,n:'Dumbbells'},{w:130,r:8,n:'Dumbbells Hard'},{w:130,r:7,n:'Hard to fail'}]},
-    {name:'Barbell Overhead Press',targetSets:3,targetReps:8,sets:[{w:110,r:8,n:'Easy'},{w:110,r:10,n:''},{w:120,r:10,n:''}]},
-    {name:'Barbell Bent Over Row',targetSets:3,targetReps:8,sets:[{w:120,r:8,n:''},{w:120,r:8,n:''},{w:120,r:8,n:'Hard'}]},
-    {name:'Romanian Deadlift',targetSets:3,targetReps:10,sets:[{w:130,r:10,n:''},{w:130,r:10,n:''},{w:130,r:9,n:''}]},
-    {name:'Ab Wheel Rollouts',targetSets:3,targetReps:'8-10',sets:[{w:0,r:10,n:''},{w:0,r:10,n:''},{w:0,r:0,n:''}]},
-  ]},
-  {id:'h3',date:'2026-08-02',type:'adhoc',label:'Ad-hoc (Sun)',notes:'',exercises:[
-    {name:'Barbell Bench Press',targetSets:3,targetReps:8,sets:[{w:140,r:8,n:''},{w:140,r:8,n:''},{w:140,r:6,n:'Hard'}]},
-    {name:'Close Grip Bench Press',targetSets:2,targetReps:10,sets:[{w:120,r:7,n:''},{w:110,r:9,n:''}]},
-    {name:'Barbell Bicep Curl',targetSets:2,targetReps:10,sets:[{w:60,r:12,n:''},{w:60,r:10,n:''}]},
-    {name:'Barbell Overhead Press',targetSets:3,targetReps:8,sets:[{w:96,r:10,n:''},{w:100,r:10,n:''},{w:110,r:10,n:'Better weight'}]},
-    {name:'Barbell Bent Over Row',targetSets:3,targetReps:8,sets:[{w:120,r:8,n:'Good'},{w:120,r:8,n:''},{w:120,r:8,n:'Hard'}]},
-    {name:'Barbell Back Squat',targetSets:3,targetReps:8,sets:[{w:145,r:10,n:'Good'},{w:145,r:10,n:''},{w:145,r:10,n:''}]},
-    {name:'Romanian Deadlift',targetSets:2,targetReps:10,sets:[{w:140,r:10,n:'Good'},{w:140,r:10,n:''}]},
-    {name:'Ab Wheel Rollouts',targetSets:3,targetReps:'8-10',sets:[{w:0,r:0,n:''},{w:0,r:0,n:''},{w:0,r:0,n:''}]},
-  ]},
-  {id:'h2',date:'2026-07-31',type:'friday',label:'Friday',notes:'',exercises:[
-    {name:'Barbell Bench Press',targetSets:3,targetReps:8,sets:[{w:135,r:10,n:'Good'},{w:135,r:8,n:'Good'},{w:135,r:8,n:'Stay'}]},
-    {name:'Barbell Overhead Press',targetSets:3,targetReps:8,sets:[{w:95,r:8,n:'Good'},{w:95,r:8,n:'Hard'},{w:95,r:8,n:'Stay'}]},
-    {name:'Barbell Bent Over Row',targetSets:3,targetReps:8,sets:[{w:125,r:8,n:'Good'},{w:125,r:8,n:'Good'},{w:135,r:8,n:'Hard'}]},
-    {name:'Romanian Deadlift',targetSets:3,targetReps:10,sets:[{w:145,r:10,n:'Good'},{w:145,r:10,n:''},{w:145,r:10,n:'Up'}]},
-    {name:'Ab Wheel Rollouts',targetSets:3,targetReps:'8-10',sets:[{w:0,r:0,n:''},{w:0,r:0,n:''},{w:0,r:0,n:''}]},
-  ]},
-  {id:'h1',date:'2026-07-28',type:'monday',label:'Monday (Tue)',notes:'',exercises:[
-    {name:'Barbell Bench Press',targetSets:3,targetReps:8,sets:[{w:95,r:12,n:'Up - bar still 45'},{w:115,r:10,n:'Up'},{w:135,r:8,n:'Good Hard'}]},
-    {name:'Close Grip Bench Press',targetSets:2,targetReps:10,sets:[{w:115,r:10,n:'Stay'},{w:115,r:10,n:'Stay'}]},
-    {name:'Barbell Bicep Curl',targetSets:2,targetReps:10,sets:[{w:65,r:10,n:'Stay'},{w:65,r:10,n:'Stay'}]},
-    {name:'Barbell Overhead Press',targetSets:3,targetReps:8,sets:[{w:85,r:10,n:'Up'},{w:95,r:10,n:'Stay'},{w:95,r:8,n:'Good'}]},
-    {name:'Barbell Bent Over Row',targetSets:3,targetReps:8,sets:[{w:115,r:10,n:'Up'},{w:125,r:8,n:'Stay'},{w:125,r:8,n:'Good'}]},
-    {name:'Barbell Back Squat',targetSets:3,targetReps:8,sets:[{w:135,r:8,n:'Up?'},{w:135,r:10,n:'Up'},{w:145,r:8,n:'Good'}]},
-    {name:'Romanian Deadlift',targetSets:2,targetReps:10,sets:[{w:135,r:10,n:'Up'},{w:155,r:12,n:'Start here next time'}]},
-  ]},
-];
-
-// ── MUSCLE GROUP MAP ──────────────────────────────────────────────────────────
 const MUSCLE_GROUP_MAP = {
-  'Chest':       ['Barbell Bench Press','Incline Barbell Bench Press','Close Grip Bench Press'],
-  'Back':        ['Barbell Bent Over Row','Lat Pulldown','Pullup','Barbell Upright Row','Barbell Deadlift','Barbell Sumo Deadlift'],
-  'Shoulders':   ['Barbell Overhead Press','Barbell Upright Row'],
-  'Triceps':     ['Barbell Skull Crushers','Close Grip Bench Press'],
-  'Biceps':      ['Barbell Bicep Curl','Barbell Bent Over Row','Lat Pulldown','Pullup'],
-  'Quads':       ['Barbell Back Squat','Barbell Front Squat','Barbell Lunges'],
-  'Hamstrings':  ['Romanian Deadlift','Barbell Good Morning','Barbell Deadlift','Barbell Sumo Deadlift'],
-  'Glutes':      ['Barbell Hip Thrust','Barbell Back Squat','Romanian Deadlift','Barbell Lunges','Barbell Sumo Deadlift'],
-  'Core':        ['Ab Wheel Rollouts','Plank'],
+  'Chest':      ['Barbell Bench Press','Incline Barbell Bench Press','Close Grip Bench Press'],
+  'Back':       ['Barbell Bent Over Row','Lat Pulldown','Pullup','Barbell Upright Row','Barbell Deadlift','Barbell Sumo Deadlift'],
+  'Shoulders':  ['Barbell Overhead Press','Barbell Upright Row'],
+  'Triceps':    ['Barbell Skull Crushers','Close Grip Bench Press'],
+  'Biceps':     ['Barbell Bicep Curl','Barbell Bent Over Row','Lat Pulldown','Pullup'],
+  'Quads':      ['Barbell Back Squat','Barbell Front Squat','Barbell Lunges'],
+  'Hamstrings': ['Romanian Deadlift','Barbell Good Morning','Barbell Deadlift','Barbell Sumo Deadlift'],
+  'Glutes':     ['Barbell Hip Thrust','Barbell Back Squat','Romanian Deadlift','Barbell Lunges','Barbell Sumo Deadlift'],
+  'Core':       ['Core','Plank'],
 };
-const MUSCLE_TARGET = 2; // sessions per week recommendation
 
-function getWeeklyMuscleCounts() {
-  const now = new Date();
-  const dayOfWeek = now.getDay(); // 0=Sun
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
-  monday.setHours(0,0,0,0);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 7);
+// Helper to build a set
+function mk(w,r,n,done,isPR){return {w,r:r,n:n||'',done:done!==false,isPR:isPR||false};}
+// Helper to build an exercise entry for seed
+function ex(name,tSets,tReps,sets){
+  const cfg=EXERCISE_CFG[name]||{};
+  return {name,targetSets:tSets,targetReps:tReps,sets,suggestion:{},missedLast:false};
+}
 
-  const weekSessions = S.sessions.filter(s => {
-    const d = new Date(s.date + 'T00:00:00');
-    return d >= monday && d < sunday;
-  });
+const SEED_SESSIONS = [
+  {id:'h1',date:'2026-07-28',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(95,12),mk(115,10),mk(135,8)]),
+    ex('Close Grip Bench Press',2,10,[mk(115,10),mk(115,10)]),
+    ex('Barbell Bicep Curl',2,10,[mk(65,10),mk(65,10)]),
+    ex('Barbell Overhead Press',3,8,[mk(85,10),mk(95,10),mk(95,8)]),
+    ex('Barbell Bent Over Row',3,8,[mk(115,10),mk(125,8),mk(125,8)]),
+    ex('Barbell Back Squat',3,8,[mk(135,8),mk(135,10),mk(145,8)]),
+    ex('Romanian Deadlift',2,10,[mk(135,10),mk(155,12)]),
+  ]},
+  {id:'h2',date:'2026-07-31',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(135,10),mk(135,8),mk(135,8)]),
+    ex('Barbell Overhead Press',3,8,[mk(95,8),mk(95,8),mk(95,8)]),
+    ex('Barbell Bent Over Row',3,8,[mk(125,8),mk(125,8),mk(135,8)]),
+    ex('Romanian Deadlift',3,10,[mk(145,10),mk(145,10),mk(145,10)]),
+    ex('Core',3,'8-10',[mk(0,0),mk(0,0),mk(0,0)]),
+  ]},
+  {id:'h3',date:'2026-08-02',type:'adhoc',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(140,8),mk(140,8),mk(140,6)]),
+    ex('Close Grip Bench Press',2,10,[mk(120,7),mk(110,9)]),
+    ex('Barbell Bicep Curl',2,10,[mk(60,12),mk(60,10)]),
+    ex('Barbell Overhead Press',3,8,[mk(96,10),mk(100,10),mk(110,10)]),
+    ex('Barbell Bent Over Row',3,8,[mk(120,8),mk(120,8),mk(120,8)]),
+    ex('Barbell Back Squat',3,8,[mk(145,10),mk(145,10),mk(145,10)]),
+    ex('Romanian Deadlift',2,10,[mk(140,10),mk(140,10)]),
+    ex('Core',3,'8-10',[mk(0,0),mk(0,0),mk(0,0)]),
+  ]},
+  {id:'h4',date:'2026-08-03',type:'adhoc',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(120,8),mk(130,8),mk(130,7)]),
+    ex('Barbell Overhead Press',3,8,[mk(110,8),mk(110,10),mk(120,10)]),
+    ex('Barbell Bent Over Row',3,8,[mk(120,8),mk(120,8),mk(120,8)]),
+    ex('Romanian Deadlift',3,10,[mk(130,10),mk(130,10),mk(130,9)]),
+    ex('Core',3,'8-10',[mk(0,10),mk(0,10),mk(0,0)]),
+  ]},
+  {id:'h5',date:'2026-08-05',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(130,8),mk(130,8),mk(130,6)]),
+    ex('Close Grip Bench Press',2,10,[mk(90,10),mk(90,10)]),
+    ex('Barbell Bicep Curl',2,10,[mk(60,10),mk(60,10)]),
+    ex('Barbell Overhead Press',3,8,[mk(120,8),mk(120,8),mk(120,7)]),
+    ex('Barbell Bent Over Row',3,8,[mk(120,8),mk(120,8),mk(120,8)]),
+    ex('Barbell Back Squat',3,8,[mk(150,8),mk(140,8),mk(140,8)]),
+    ex('Romanian Deadlift',2,10,[mk(140,10),mk(140,10)]),
+    ex('Core',3,'8-10',[mk(0,10),mk(0,10),mk(0,10)]),
+  ]},
+  {id:'h6',date:'2026-08-08',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(135,8),mk(145,8),mk(145,9)]),
+    ex('Close Grip Bench Press',2,10,[mk(105,10),mk(105,10)]),
+    ex('Barbell Bicep Curl',2,10,[mk(85,10),mk(85,7)]),
+    ex('Barbell Overhead Press',3,8,[mk(115,8),mk(115,6),mk(105,6)]),
+    ex('Barbell Bent Over Row',3,8,[mk(125,8),mk(135,8),mk(135,9)]),
+    ex('Barbell Back Squat',3,8,[mk(145,8),mk(145,10),mk(155,9)]),
+    ex('Romanian Deadlift',2,10,[mk(155,12),mk(165,10)]),
+    ex('Core',3,'8-10',[mk(35,10),mk(35,10),mk(35,10)]),
+  ]},
+  {id:'h7',date:'2026-08-10',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(145,8),mk(145,8),mk(145,8)]),
+    ex('Close Grip Bench Press',2,10,[mk(105,10),mk(105,10)]),
+    ex('Barbell Bicep Curl',2,10,[mk(85,10),mk(85,6)]),
+    ex('Barbell Overhead Press',3,8,[mk(115,8),mk(115,6),mk(115,6)]),
+    ex('Barbell Bent Over Row',3,8,[mk(135,8),mk(145,8),mk(145,8)]),
+    ex('Barbell Back Squat',3,8,[mk(155,8),mk(155,8),mk(165,8)]),
+    ex('Romanian Deadlift',2,10,[mk(155,10),mk(175,10)]),
+    ex('Core',3,'8-10',[mk(0,0),mk(0,0),mk(0,0)]),
+  ]},
+  {id:'s1786963026547l1j1',date:'2026-08-17',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(145,8),mk(145,8),mk(145,10)]),
+    ex('Close Grip Bench Press',2,10,[mk(110,10),mk(110,10)]),
+    ex('Barbell Bicep Curl',2,10,[mk(85,10),mk(85,8)]),
+    ex('Barbell Overhead Press',3,8,[mk(115,8),mk(115,8),mk(115,7)]),
+    ex('Barbell Bent Over Row',3,8,[mk(145,8),mk(150,8),mk(150,7)]),
+    ex('Barbell Back Squat',3,8,[mk(170,8),mk(175,8),mk(175,8)]),
+    ex('Romanian Deadlift',2,10,[mk(175,10),mk(180,10)]),
+  ]},
+  {id:'s1787313162703qvwb',date:'2026-08-21',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(145,8),mk(145,8),mk(145,8)]),
+    ex('Barbell Overhead Press',3,8,[mk(95,8),mk(95,8),mk(95,8)]),
+    ex('Barbell Bent Over Row',3,8,[mk(150,8),mk(150,8),mk(150,8)]),
+    ex('Romanian Deadlift',3,10,[mk(180,8),mk(180,8),mk(180,8)]),
+    ex('Core',3,'8-10',[mk(0,10),mk(0,10),mk(0,10)]),
+  ]},
+  {id:'s1787567685265haul',date:'2026-08-24',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(145,8),mk(145,8),mk(145,8)]),
+    ex('Close Grip Bench Press',2,10,[mk(110,10),mk(110,10)]),
+    ex('Barbell Bicep Curl',2,10,[mk(85,10),mk(85,10)]),
+    ex('Barbell Overhead Press',3,8,[mk(95,8),mk(105,8),mk(105,8)]),
+    ex('Barbell Bent Over Row',3,8,[mk(150,8),mk(150,8),mk(150,8)]),
+    ex('Barbell Back Squat',3,8,[mk(175,8),mk(175,8),mk(175,8)]),
+    ex('Romanian Deadlift',2,10,[mk(185,10),mk(185,10)]),
+  ]},
+  {id:'s1787914200716aw1q',date:'2026-08-28',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(145,8),mk(145,8),mk(145,7)]),
+    ex('Barbell Overhead Press',3,8,[mk(105,8),mk(105,7),mk(105,6)]),
+    ex('Barbell Bent Over Row',3,8,[mk(150,8),mk(150,8),mk(150,6)]),
+    ex('Romanian Deadlift',3,10,[mk(185,8),mk(185,8),mk(185,8)]),
+    ex('Core',3,'8-10',[mk(0,10),mk(0,9),mk(0,10)]),
+  ]},
+  {id:'s1788172725418wosx',date:'2026-08-31',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(145,8),mk(145,8),mk(145,10)]),
+    ex('Close Grip Bench Press',2,10,[mk(110,10),mk(110,12)]),
+    ex('Barbell Bicep Curl',2,10,[mk(85,10),mk(85,8)]),
+    ex('Barbell Overhead Press',3,8,[mk(105,9),mk(105,8),mk(105,6)]),
+    ex('Barbell Bent Over Row',3,8,[mk(150,8),mk(150,8),mk(150,8)]),
+    ex('Barbell Back Squat',3,8,[mk(175,8),mk(175,8),mk(175,8)]),
+    ex('Romanian Deadlift',2,10,[mk(185,10),mk(185,12)]),
+  ]},
+  {id:'s1788519160934j2c8',date:'2026-09-04',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(145,8),mk(145,8),mk(145,8)]),
+    ex('Barbell Overhead Press',3,8,[mk(105,8),mk(105,8),mk(105,6)]),
+    ex('Barbell Bent Over Row',3,8,[mk(150,8),mk(150,8),mk(150,7)]),
+    ex('Romanian Deadlift',3,10,[mk(185,8),mk(185,8),mk(185,10)]),
+    ex('Core',3,'8-10',[mk(0,10),mk(0,10),mk(0,10)]),
+  ]},
+  {id:'s1788780730715o8s8',date:'2026-09-07',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(145,8),mk(145,8),mk(145,10)]),
+    ex('Close Grip Bench Press',2,10,[mk(115,10),mk(115,10)]),
+    ex('Barbell Bicep Curl',2,10,[mk(85,10),mk(85,10)]),
+    ex('Barbell Overhead Press',3,8,[mk(105,8),mk(105,8),mk(105,8)]),
+    ex('Barbell Bent Over Row',3,8,[mk(150,0),mk(150,0),mk(150,0)]),
+    ex('Barbell Back Squat',3,8,[mk(175,0),mk(175,0),mk(175,0)]),
+    ex('Romanian Deadlift',2,10,[mk(185,0),mk(185,0)]),
+  ]},
+  {id:'s1789123927573n778',date:'2026-09-11',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(145,8),mk(145,8),mk(145,8)]),
+    ex('Barbell Overhead Press',3,8,[mk(105,8),mk(105,8),mk(105,8)]),
+    ex('Barbell Bent Over Row',3,8,[mk(155,8),mk(155,8),mk(155,6)]),
+    ex('Romanian Deadlift',3,10,[mk(185,10),mk(185,10),mk(185,10)]),
+    ex('Core',3,'8-10',[mk(0,10),mk(0,10),mk(0,10)]),
+  ]},
+  {id:'s1789378992733m5ea',date:'2026-09-14',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(145,8),mk(145,10),mk(145,10)]),
+    ex('Close Grip Bench Press',2,10,[mk(115,10),mk(115,12)]),
+    ex('Barbell Bicep Curl',2,10,[mk(85,10),mk(85,7)]),
+    ex('Barbell Overhead Press',3,8,[mk(105,8),mk(105,8),mk(105,8)]),
+    ex('Barbell Bent Over Row',3,8,[mk(155,8),mk(155,8),mk(155,5)]),
+    ex('Barbell Back Squat',3,8,[mk(175,8),mk(175,8),mk(175,8)]),
+    ex('Romanian Deadlift',2,10,[mk(185,0),mk(185,0)]),
+  ]},
+  {id:'s1789728791604bx21',date:'2026-09-18',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(145,9),mk(145,8),mk(145,9)]),
+    ex('Barbell Overhead Press',3,8,[mk(105,8),mk(105,8),mk(105,7)]),
+    ex('Barbell Bent Over Row',3,8,[mk(155,8),mk(155,8),mk(155,7)]),
+    ex('Romanian Deadlift',3,10,[mk(185,8),mk(185,8),mk(185,10)]),
+    ex('Core',3,'8-10',[mk(0,0),mk(0,0),mk(0,0)]),
+  ]},
+  {id:'s1789906854240nc20',date:'2026-09-20',type:'adhoc',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(145,8),mk(145,8),mk(145,8)]),
+    ex('Close Grip Bench Press',3,10,[mk(115,12),mk(115,12),mk(115,0)]),
+    ex('Barbell Bicep Curl',3,10,[mk(85,10),mk(85,8),mk(85,0)]),
+    ex('Barbell Overhead Press',3,8,[mk(105,10),mk(105,10),mk(105,0)]),
+    ex('Barbell Bent Over Row',3,8,[mk(155,0),mk(155,0),mk(155,0)]),
+    ex('Barbell Back Squat',3,8,[mk(175,0),mk(175,0),mk(175,0)]),
+    ex('Romanian Deadlift',3,10,[mk(185,0),mk(185,0),mk(185,0)]),
+  ]},
+  {id:'s17901608153900i2w',date:'2026-09-23',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',2,8,[mk(145,10),mk(145,10)]),
+    ex('Incline Barbell Bench Press',3,8,[mk(95,8),mk(115,8),mk(115,9)]),
+    ex('Close Grip Bench Press',2,10,[mk(115,10),mk(115,10)]),
+    ex('Barbell Skull Crushers',3,10,[mk(40,10),mk(50,8),mk(50,8)]),
+    ex('Barbell Bicep Curl',2,10,[mk(80,8),mk(80,7)]),
+    ex('Barbell Bent Over Row',2,8,[mk(155,10),mk(155,10)]),
+    ex('Barbell Overhead Press',2,8,[mk(105,10),mk(105,8)]),
+  ]},
+  {id:'s1790333520815tdpy',date:'2026-09-25',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Back Squat',3,8,[mk(180,8),mk(180,8),mk(180,8)]),
+    ex('Romanian Deadlift',3,10,[mk(185,8),mk(185,8),mk(185,8)]),
+    ex('Barbell Hip Thrust',3,10,[mk(185,8),mk(185,8),mk(185,8)]),
+    ex('Core',3,'8-10',[mk(0,10),mk(0,10),mk(0,10)]),
+    ex('Barbell Bench Press',3,8,[mk(150,8),mk(150,8),mk(150,8)]),
+    ex('Incline Barbell Bench Press',3,8,[mk(115,8),mk(115,8),mk(120,8)]),
+    ex('Close Grip Bench Press',2,10,[mk(120,10),mk(120,8)]),
+  ]},
+  {id:'s17905881204520ilx',date:'2026-09-28',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Skull Crushers',3,10,[mk(50,10),mk(55,10),mk(50,8)]),
+    ex('Barbell Bicep Curl',2,10,[mk(80,10),mk(80,7)]),
+    ex('Barbell Bent Over Row',3,8,[mk(155,10),mk(155,10),mk(155,8)]),
+    ex('Barbell Overhead Press',3,8,[mk(110,8),mk(110,8),mk(110,8)]),
+    ex('Barbell Bench Press',3,8,[mk(155,8),mk(155,8),mk(155,6)]),
+    ex('Barbell Back Squat',3,8,[mk(185,10),mk(185,8),mk(185,8)]),
+    ex('Romanian Deadlift',3,10,[mk(185,10),mk(185,10),mk(185,10)]),
+    ex('Barbell Hip Thrust',3,10,[mk(185,10),mk(185,8),mk(185,8)]),
+    ex('Core',3,'8-10',[mk(0,10),mk(0,10),mk(0,10)]),
+  ]},
+  {id:'s1790760556548fiym',date:'2026-09-30',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Incline Barbell Bench Press',3,8,[mk(125,11),mk(125,10),mk(125,9)]),
+    ex('Close Grip Bench Press',2,10,[mk(125,10),mk(125,10)]),
+    ex('Barbell Bench Press',3,8,[mk(160,8),mk(160,8),mk(160,5)]),
+    ex('Barbell Skull Crushers',3,10,[mk(55,10),mk(55,10),mk(55,8)]),
+    ex('Barbell Bicep Curl',2,10,[mk(80,10),mk(80,7)]),
+    ex('Barbell Overhead Press',3,8,[mk(115,8),mk(115,7),mk(115,6)]),
+    ex('Barbell Back Squat',3,8,[mk(190,8),mk(190,8),mk(190,8)]),
+    ex('Core',3,'8-10',[mk(0,15),mk(0,15),mk(0,15)]),
+  ]},
+  {id:'s179093185148363pk',date:'2026-10-02',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bent Over Row',3,8,[mk(160,8),mk(160,8),mk(160,8)]),
+    ex('Romanian Deadlift',3,10,[mk(185,8),mk(185,8),mk(185,10)]),
+    ex('Barbell Hip Thrust',3,10,[mk(185,8),mk(185,8),mk(185,8)]),
+    ex('Barbell Bench Press',3,8,[mk(165,9),mk(165,8),mk(165,7)]),
+    ex('Incline Barbell Bench Press',3,8,[mk(130,10),mk(130,8),mk(130,8)]),
+    ex('Close Grip Bench Press',2,10,[mk(130,10),mk(130,9)]),
+    ex('Core',3,'8-10',[mk(0,10),mk(0,10),mk(0,10)]),
+  ]},
+  {id:'s1791196438073sroi',date:'2026-10-05',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Skull Crushers',3,10,[mk(55,10),mk(55,10),mk(55,9)]),
+    ex('Barbell Bicep Curl',2,10,[mk(80,10),mk(80,8)]),
+    ex('Barbell Overhead Press',3,8,[mk(120,9),mk(120,7),mk(120,6)]),
+    ex('Barbell Back Squat',3,8,[mk(195,8),mk(195,8),mk(195,8)]),
+    ex('Barbell Bench Press',3,8,[mk(170,8),mk(170,8),mk(170,6)]),
+    ex('Incline Barbell Bench Press',3,8,[mk(135,8),mk(135,8),mk(135,8)]),
+    ex('Close Grip Bench Press',2,10,[mk(135,8),mk(135,8)]),
+    ex('Barbell Bent Over Row',3,8,[mk(165,8),mk(165,8),mk(165,4)]),
+    ex('Romanian Deadlift',3,10,[mk(185,10),mk(185,10),mk(185,10)]),
+    ex('Barbell Hip Thrust',3,10,[mk(185,8),mk(185,10),mk(185,10)]),
+  ]},
+  {id:'s1791363813196miex',date:'2026-10-07',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Core',3,'8-10',[mk(0,10),mk(0,10),mk(0,10)]),
+    ex('Barbell Bench Press',3,8,[mk(170,10),mk(170,8),mk(170,7)]),
+    ex('Incline Barbell Bench Press',3,8,[mk(140,8),mk(140,7),mk(140,8)]),
+    ex('Close Grip Bench Press',2,10,[mk(140,10),mk(140,9)]),
+    ex('Barbell Skull Crushers',3,10,[mk(55,10),mk(55,10),mk(55,10)]),
+    ex('Barbell Bicep Curl',2,10,[mk(80,8),mk(80,8)]),
+    ex('Barbell Bent Over Row',3,8,[mk(170,8),mk(170,8),mk(170,8)]),
+  ]},
+  {id:'s1791536772584j4h6',date:'2026-10-09',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Overhead Press',3,8,[mk(125,8),mk(125,8),mk(125,6)]),
+    ex('Barbell Back Squat',3,8,[mk(200,8),mk(200,10),mk(200,8)]),
+    ex('Romanian Deadlift',3,10,[mk(190,10),mk(190,10),mk(190,10)]),
+    ex('Barbell Hip Thrust',3,10,[mk(185,10),mk(185,10),mk(185,10)]),
+    ex('Incline Barbell Bench Press',3,8,[mk(145,8),mk(145,8),mk(145,8)]),
+    ex('Core',3,'8-10',[mk(0,15),mk(0,15),mk(0,15)]),
+  ]},
+  {id:'s1791801235908j6g2',date:'2026-10-12',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(170,8),mk(170,8),mk(170,7)]),
+    ex('Close Grip Bench Press',2,10,[mk(140,10),mk(140,8)]),
+    ex('Barbell Skull Crushers',3,10,[mk(65,10),mk(65,10),mk(65,10)]),
+    ex('Barbell Bicep Curl',2,10,[mk(80,10),mk(80,10)]),
+    ex('Barbell Bent Over Row',3,8,[mk(175,8),mk(175,8),mk(175,8)]),
+    ex('Incline Barbell Bench Press',3,8,[mk(150,8),mk(150,8),mk(150,8)]),
+  ]},
+  {id:'s179197218697412qk',date:'2026-10-14',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Overhead Press',3,8,[mk(130,8),mk(130,7),mk(130,4)]),
+    ex('Barbell Back Squat',3,8,[mk(205,8),mk(205,8),mk(205,7)]),
+    ex('Romanian Deadlift',3,10,[mk(195,10),mk(195,10),mk(195,10)]),
+    ex('Barbell Hip Thrust',3,10,[mk(185,10),mk(185,10),mk(185,10)]),
+    ex('Core',3,'8-10',[mk(0,10),mk(0,10),mk(0,10)]),
+  ]},
+  {id:'s179214133857454fy',date:'2026-10-16',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(170,8),mk(170,8),mk(170,8)]),
+    ex('Incline Barbell Bench Press',3,8,[mk(155,8),mk(155,7),mk(155,5)]),
+    ex('Close Grip Bench Press',2,10,[mk(140,10),mk(140,10)]),
+    ex('Barbell Skull Crushers',3,10,[mk(70,10),mk(70,10),mk(70,9)]),
+    ex('Barbell Bicep Curl',2,10,[mk(80,10),mk(80,9)]),
+    ex('Barbell Bent Over Row',3,8,[mk(180,8),mk(180,8),mk(180,7)]),
+    ex('Core',3,'8-10',[mk(0,15),mk(0,15),mk(0,15)]),
+  ]},
+  {id:'s17924060236371b93',date:'2026-10-19',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Overhead Press',3,8,[mk(130,8),mk(130,7),mk(130,6)]),
+    ex('Barbell Back Squat',3,8,[mk(210,8),mk(210,8),mk(210,8)]),
+    ex('Romanian Deadlift',3,10,[mk(200,10),mk(200,10),mk(200,10)]),
+    ex('Barbell Hip Thrust',3,10,[mk(190,10),mk(190,10),mk(190,10)]),
+    ex('Core',3,'8-10',[mk(0,10),mk(0,10),mk(0,10)]),
+  ]},
+  {id:'s1792573625833h2fs',date:'2026-10-21',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Lat Pulldown',3,8,[mk(77,12),mk(88,12),mk(99,12)]),
+    ex('Barbell Bench Press',3,8,[mk(170,8),mk(170,8),mk(170,9)]),
+    ex('Incline Barbell Bench Press',3,8,[mk(160,8),mk(160,6),mk(160,6)]),
+    ex('Close Grip Bench Press',2,10,[mk(140,10),mk(140,9)]),
+    ex('Barbell Skull Crushers',3,10,[mk(70,12),mk(70,12),mk(70,10)]),
+    ex('Barbell Bicep Curl',2,10,[mk(80,10),mk(80,10)]),
+    ex('Core',3,'8-10',[mk(0,15),mk(0,15),mk(0,15)]),
+  ]},
+  {id:'s1792746143569x3sx',date:'2026-10-23',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bent Over Row',3,8,[mk(185,9),mk(185,8),mk(185,8)]),
+    ex('Barbell Overhead Press',3,8,[mk(130,8),mk(130,6),mk(130,6)]),
+    ex('Barbell Back Squat',3,8,[mk(215,8),mk(215,8),mk(215,8)]),
+    ex('Romanian Deadlift',3,10,[mk(205,10),mk(205,10),mk(205,10)]),
+    ex('Barbell Hip Thrust',3,10,[mk(195,10),mk(195,10),mk(195,0)]),
+    ex('Lat Pulldown',3,8,[mk(99,10),mk(110,10),mk(115,10)]),
+    ex('Core',3,'8-10',[mk(0,20),mk(0,20),mk(0,15)]),
+  ]},
+  {id:'s1792840071672f3b0',date:'2026-10-24',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(175,9),mk(175,8),mk(175,7)]),
+    ex('Incline Barbell Bench Press',3,8,[mk(165,7),mk(165,6),mk(165,5)]),
+    ex('Close Grip Bench Press',2,10,[mk(140,10),mk(140,10)]),
+    ex('Barbell Skull Crushers',3,10,[mk(75,10),mk(75,8),mk(75,6)]),
+    ex('Barbell Bicep Curl',2,10,[mk(85,8),mk(85,4)]),
+    ex('Core',3,'8-10',[mk(0,15),mk(0,15),mk(0,15)]),
+  ]},
+  {id:'s1793013051485s1zk',date:'2026-10-26',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Lat Pulldown',3,8,[mk(120,8),mk(120,8),mk(120,8)]),
+    ex('Barbell Bent Over Row',3,8,[mk(190,8),mk(190,7),mk(190,6)]),
+    ex('Barbell Overhead Press',3,8,[mk(130,8),mk(130,7),mk(130,6)]),
+    ex('Barbell Back Squat',3,8,[mk(220,8),mk(220,8),mk(220,8)]),
+    ex('Romanian Deadlift',3,10,[mk(210,10),mk(210,10),mk(210,9)]),
+    ex('Barbell Hip Thrust',3,10,[mk(200,10),mk(200,10),mk(200,8)]),
+    ex('Core',3,'8-10',[mk(0,15),mk(0,15),mk(0,15)]),
+  ]},
+  {id:'s17931787357403w2f',date:'2026-10-28',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(180,8),mk(180,8),mk(180,7)]),
+    ex('Incline Barbell Bench Press',3,8,[mk(170,7),mk(170,5),mk(170,5)]),
+    ex('Close Grip Bench Press',2,10,[mk(145,10),mk(145,9)]),
+    ex('Barbell Skull Crushers',3,10,[mk(80,10),mk(80,8),mk(80,6)]),
+    ex('Barbell Bicep Curl',2,10,[mk(90,10),mk(90,7)]),
+    ex('Core',3,'8-10',[mk(0,10),mk(0,10),mk(0,10)]),
+  ]},
+  {id:'s179335108492683nb',date:'2026-10-30',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Lat Pulldown',3,8,[mk(125,10),mk(125,10),mk(125,8)]),
+    ex('Barbell Overhead Press',3,8,[mk(130,8),mk(130,8),mk(130,6)]),
+    ex('Barbell Back Squat',3,8,[mk(225,8),mk(225,8),mk(225,8)]),
+    ex('Romanian Deadlift',3,10,[mk(215,10),mk(215,10),mk(215,8)]),
+    ex('Barbell Bent Over Row',3,8,[mk(195,8),mk(195,7),mk(195,6)]),
+    ex('Barbell Hip Thrust',3,10,[mk(205,10),mk(205,10),mk(205,9)]),
+    ex('Core',3,'8-10',[mk(0,10),mk(0,10),mk(0,10)]),
+  ]},
+  {id:'s1793445280266qi39',date:'2026-10-31',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Bench Press',3,8,[mk(185,6),mk(185,6),mk(185,5)]),
+    ex('Incline Barbell Bench Press',3,8,[mk(170,8),mk(170,8),mk(170,6)]),
+    ex('Close Grip Bench Press',2,10,[mk(150,10),mk(150,11)]),
+    ex('Barbell Skull Crushers',3,10,[mk(85,10),mk(85,10),mk(85,8)]),
+    ex('Barbell Bicep Curl',2,10,[mk(95,9),mk(95,6)]),
+    ex('Lat Pulldown',3,8,[mk(130,13),mk(140,12),mk(140,12)]),
+    ex('Core',3,'8-10',[mk(0,10),mk(0,10),mk(0,10)]),
+  ]},
+  {id:'s1793619709105nws5',date:'2026-11-02',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Barbell Back Squat',3,8,[mk(230,8),mk(230,8),mk(230,7)]),
+    ex('Barbell Overhead Press',3,8,[mk(130,7),mk(130,5),mk(125,6)]),
+    ex('Barbell Bench Press',3,8,[mk(190,8),mk(190,8),mk(190,6)]),
+    ex('Incline Barbell Bench Press',3,8,[mk(170,8),mk(170,7),mk(170,6)]),
+    ex('Core',3,'8-10',[mk(0,10),mk(0,10),mk(0,10)]),
+  ]},
+  {id:'s17937039217446wrm',date:'2026-11-03',type:'default',label:'Full Body',notes:'',exercises:[
+    ex('Romanian Deadlift',3,10,[mk(220,10),mk(220,10),mk(220,10)]),
+    ex('Barbell Hip Thrust',3,10,[mk(210,10),mk(210,10),mk(210,8)]),
+    ex('Lat Pulldown',3,8,[mk(145,8),mk(145,10),mk(145,8)]),
+    ex('Core',3,'8-10',[mk(0,10),mk(0,10),mk(0,10)]),
+  ]},
+];
 
-  const counts = {};
-  for (const group of Object.keys(MUSCLE_GROUP_MAP)) {
-    const sessionSet = new Set();
-    for (const sess of weekSessions) {
-      const names = sess.exercises.map(e => e.name);
-      if (MUSCLE_GROUP_MAP[group].some(ex => names.includes(ex))) {
-        sessionSet.add(sess.id);
-      }
-    }
-    counts[group] = sessionSet.size;
+// ── State ──────────────────────────────────────────────────────────────────
+let S = {
+  view:'home',
+  sessions:JSON.parse(JSON.stringify(SEED_SESSIONS)),
+  customRoutines:{},
+  wkPhase:'idle',
+  wkSession:null,
+  wkStart:0,
+  routinePointer:6, // Lat Pulldown = nonCore[6], last done 2026-11-03
+  timerActive:false,
+  timerSec:0,
+  timerTotal:REST_SEC,
+  timerEx:'',
+  timerInterval:null,
+  histOpen:{},
+  exOpen:{},
+  progressEx:null,
+  progressMetric:'1rm',
+  pendingDelSession:null,
+  pendingDelEx:null,
+  addExTarget:'workout',
+  addExSearch:'',
+  settingsRoutineEdit:false,
+  elapsedInterval:null,
+};
+
+// ── Persistence ────────────────────────────────────────────────────────────
+function lsOk(){try{localStorage.setItem('__t','1');localStorage.removeItem('__t');return true;}catch(e){return false;}}
+
+function persist(){
+  if(!lsOk()) return;
+  localStorage.setItem('barbell-coach-v2',JSON.stringify({
+    sessions:S.sessions,
+    customRoutines:S.customRoutines,
+    routinePointer:S.routinePointer,
+  }));
+}
+
+function load(){
+  if(!lsOk()) return;
+  try{
+    const raw=localStorage.getItem('barbell-coach-v2');
+    if(!raw) return;
+    const d=JSON.parse(raw);
+    if(d.sessions) S.sessions=d.sessions;
+    if(d.customRoutines) S.customRoutines=d.customRoutines;
+    if(d.routinePointer!==undefined) S.routinePointer=d.routinePointer;
+  }catch(e){}
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function isCore(name){return (EXERCISE_CFG[name]?.cat==='core');}
+
+function getCurrentRoutine(){
+  const cr=S.customRoutines?.default;
+  return (cr && cr.length>0)?cr:DEFAULT_ROUTINE;
+}
+
+function epley(w,r){return r>1?Math.round(w*(1+r/30)):w;}
+
+function getSuggestion(name){
+  const hist=S.sessions.map(s=>{
+    const ex=s.exercises?.find(e=>e.name===name);
+    if(!ex) return null;
+    const doneSets=ex.sets.filter(st=>st.done&&st.r>0);
+    if(!doneSets.length) return null;
+    const maxW=Math.max(...doneSets.map(st=>st.w));
+    const setsAtMax=doneSets.filter(st=>st.w===maxW);
+    const minReps=Math.min(...setsAtMax.map(st=>st.r));
+    const maxReps=Math.max(...setsAtMax.map(st=>st.r));
+    const allDone=(doneSets.length>=ex.targetSets);
+    const targetReps=Number(ex.targetReps)||8;
+    const qualifies=allDone&&setsAtMax.length>=ex.targetSets&&minReps>=targetReps;
+    const best1rm=Math.max(...doneSets.map(st=>epley(st.w,st.r)));
+    return {w:maxW,minReps,maxReps,qualifies,best1rm,date:s.date};
+  }).filter(Boolean);
+  if(!hist.length) return {weight:0,reps:'',note:'No history'};
+  const recent=hist.slice(-LOOK_BACK);
+  const qualCount=recent.filter(h=>h.qualifies).length;
+  const last=hist[hist.length-1];
+  const cfg=EXERCISE_CFG[name]||{};
+  const inc=cfg.inc||5;
+  const routine=getCurrentRoutine().find(r=>r.name===name);
+  const targetReps=Number(routine?.targetReps)||8;
+  if(qualCount>=OVERLOAD_SESSIONS){
+    return {weight:last.w+inc,reps:targetReps,note:`Increase! (${qualCount} qualifying recent sessions)`};
   }
+  return {weight:last.w,reps:targetReps,note:`Maintain ${last.w}lb`};
+}
+
+function getWeekSessions(){
+  const now=new Date();
+  const mon=new Date(now);
+  mon.setDate(now.getDate()-((now.getDay()+6)%7));
+  mon.setHours(0,0,0,0);
+  return S.sessions.filter(s=>new Date(s.date)>=mon);
+}
+
+function getMuscleGroupsThisWeek(){
+  const weekSes=getWeekSessions();
+  const counts={};
+  Object.keys(MUSCLE_GROUP_MAP).forEach(mg=>{counts[mg]=0;});
+  weekSes.forEach(ses=>{
+    ses.exercises?.forEach(ex=>{
+      Object.entries(MUSCLE_GROUP_MAP).forEach(([mg,exes])=>{
+        if(exes.includes(ex.name)&&ex.sets?.some(st=>st.done&&st.r>0)) counts[mg]++;
+      });
+    });
+  });
   return counts;
 }
 
-// ── STATE ─────────────────────────────────────────────────────────────────────
-let S = {
-  view: 'home',
-  sessions: JSON.parse(JSON.stringify(SEED_SESSIONS)),
-  customRoutines: {},   // {default: [{name,sets,targetReps},...]}
-  wkPhase: 'idle',     // 'idle' | 'active' | 'done'
-  wkSession: null,
-  wkStart: 0,
-  timerActive: false,
-  timerSec: 0,
-  timerTotal: REST_SEC,
-  timerEx: '',
-  timerInterval: null,
-  histOpen: {},
-  exOpen: {},
-  progressOpen: {},
-  pendingDelSession: null,
-  pendingDelEx: null,
-  addExTarget: 'workout', // 'workout' | 'routine'
-  elapsedInterval: null,
-};
-
-// ── STORAGE ───────────────────────────────────────────────────────────────────
-function lsOk() {
-  try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); return true; }
-  catch(e) { return false; }
-}
-function persist() {
-  if (!lsOk()) return;
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify({
-      v: 2,
-      sessions: S.sessions,
-      customRoutines: S.customRoutines,
-      saved: new Date().toISOString()
-    }));
-  } catch(e) {}
-}
-function loadFromStorage() {
-  if (!lsOk()) return;
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return;
-    const d = JSON.parse(raw);
-    if (d && d.v === 2) {
-      if (d.customRoutines) S.customRoutines = d.customRoutines;
-      if (d.sessions && d.sessions.length > 0) {
-        // Merge: always include all seed sessions, plus any user sessions not in seed
-        const seedIds = new Set(SEED_SESSIONS.map(s => s.id));
-        const userExtra = d.sessions.filter(s => !seedIds.has(s.id));
-        if (userExtra.length > 0) {
-          S.sessions = [...SEED_SESSIONS, ...userExtra]
-            .sort((a,b) => new Date(b.date) - new Date(a.date));
-        }
-        // If user had deleted a seed session, we still restore it from seed
-        // (design choice: seed data is always authoritative)
-      }
-    }
-  } catch(e) {}
-}
-
-// ── HELPERS ───────────────────────────────────────────────────────────────────
-function isCore(n) { return EXERCISE_CFG[n]?.cat === 'core'; }
-function cfg(n) { return EXERCISE_CFG[n] || {icon:'💪',cat:'upper',inc:5,color:'#6366f1'}; }
-function fmtDate(d) {
-  const dt = new Date(d + 'T12:00:00');
+function fmtDate(d){
+  const dt=new Date(d+'T12:00:00');
   return dt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
 }
-function sessMaxW(sets) {
-  const ws = sets.map(s=>s.w||0).filter(w=>w>0);
-  return ws.length ? Math.max(...ws) : 0;
-}
-function epley1RM(w, r) { return r > 1 ? w * (1 + r/30) : w; }
 
-function getSuggestion(exName) {
-  const {inc} = cfg(exName);
-  if (isCore(exName)) return {weight:0, note:'Bodyweight / reps focus', inc:false};
-  const rel = S.sessions
-    .filter(s => s.exercises.some(e => e.name === exName))
-    .sort((a,b) => new Date(b.date) - new Date(a.date));
-  if (!rel.length) return {weight:0, note:'No history — enter starting weight', inc:false};
-  const lastEx = rel[0].exercises.find(e => e.name === exName);
-  const lastSets = lastEx.sets.filter(s => s.w > 0 || s.r > 0);
-  if (!lastSets.length) return {weight:0, note:'No weight logged yet', inc:false};
-  const maxW = sessMaxW(lastSets);
-  // Double progression: count qualifying sessions within the last LOOK_BACK sessions.
-  // A session qualifies when ALL sets at the max weight hit or exceed the target reps (≥).
-  const window = rel.slice(0, LOOK_BACK);
-  let qualCount = 0;
-  let targetRepsRef = 8; // reference for messaging
-  for (const sess of window) {
-    const ex = sess.exercises.find(e => e.name === exName);
-    if (!ex) continue;
-    const sets = ex.sets.filter(s => s.w > 0 || s.r > 0);
-    if (!sets.length) continue;
-    const tr = typeof ex.targetReps === 'string' ? 8 : (ex.targetReps || 8);
-    targetRepsRef = tr;
-    const mw = sessMaxW(sets);
-    if (!mw) continue;
-    const heavy = sets.filter(s => s.w === mw);
-    // Qualifies if ALL heavy sets are AT or ABOVE target reps
-    if (heavy.length && heavy.every(s => s.r >= tr)) qualCount++;
-  }
-  if (qualCount >= OVERLOAD_SESSIONS) {
-    return {
-      weight: maxW + inc,
-      note: `Ready to advance — ${qualCount}/${LOOK_BACK} sessions at ${targetRepsRef}+ reps`,
-      inc: true,
-      lastW: maxW
-    };
-  }
-  return {
-    weight: maxW,
-    note: `${qualCount}/${OVERLOAD_SESSIONS} sessions at ${targetRepsRef}+ reps (last ${LOOK_BACK})`,
-    inc: false,
-    lastW: maxW
-  };
-}
+function fmtSec(s){const m=Math.floor(s/60),r=s%60;return `${m}:${r.toString().padStart(2,'0')}`;}
 
-function checkPR(exName, w, r) {
-  if (isCore(exName) || !w || !r) return false;
-  const new1RM = epley1RM(w, r);
-  for (const sess of S.sessions) {
-    const ex = sess.exercises.find(e => e.name === exName);
-    if (!ex) continue;
-    for (const set of ex.sets) {
-      if (set.w > 0 && set.r > 0 && epley1RM(set.w, set.r) >= new1RM) return false;
-    }
-  }
-  return new1RM > 0;
-}
-
-function fmtElapsed(ms) {
-  const m = Math.floor(ms / 60000);
-  const s = Math.floor((ms % 60000) / 1000);
-  return `${m}:${String(s).padStart(2,'0')}`;
-}
-
-function getCurrentRoutine() {
-  return S.customRoutines.default || DEFAULT_ROUTINE;
-}
-
-// Returns a Set of exercise names that were absent from the most recent session.
-// Used to prioritize those exercises at the top of the next workout.
-function getMissedExercises() {
-  if (!S.sessions.length) return new Set();
-  const lastSess = S.sessions[0];
-  const routine = getCurrentRoutine();
-  const lastNames = new Set(lastSess.exercises.map(e => e.name));
-  return new Set(routine.filter(ex => !lastNames.has(ex.name)).map(ex => ex.name));
-}
-
-// ── TOAST ─────────────────────────────────────────────────────────────────────
-let toastTimer = null;
-function showToast(msg, type='') {
-  const el = document.getElementById('toast');
-  if (!el) return;
-  el.textContent = msg;
-  el.className = 'show' + (type ? ' '+type : '');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { el.className = ''; }, 3000);
-}
-
-// ── TIMER ─────────────────────────────────────────────────────────────────────
-function startTimer(exName) {
-  stopTimer();
-  S.timerActive = true;
-  S.timerSec = REST_SEC;
-  S.timerTotal = REST_SEC;
-  S.timerEx = exName;
-  updateTimerDOM();
-  document.getElementById('timer-ov')?.classList.remove('hidden');
-  S.timerInterval = setInterval(() => {
-    S.timerSec--;
-    if (S.timerSec <= 0) {
-      stopTimer();
-      showToast('Rest done — go! 💪');
-    } else {
-      updateTimerDOM();
-    }
-  }, 1000);
-}
-function stopTimer() {
-  clearInterval(S.timerInterval);
-  S.timerInterval = null;
-  S.timerActive = false;
-  document.getElementById('timer-ov')?.classList.add('hidden');
-}
-function updateTimerDOM() {
-  const cnt = document.getElementById('timer-cnt');
-  const fill = document.getElementById('timer-bf');
-  const lbl = document.getElementById('timer-lbl');
-  if (cnt) cnt.textContent = S.timerSec + 's';
-  if (fill) fill.style.width = (S.timerSec / S.timerTotal * 100) + '%';
-  if (lbl) lbl.textContent = 'Rest · ' + S.timerEx;
-}
-
-// ── ELAPSED TIMER ────────────────────────────────────────────────────────────
-function startElapsed() {
-  clearInterval(S.elapsedInterval);
-  S.elapsedInterval = setInterval(() => {
-    const el = document.getElementById('wk-elapsed');
-    if (el && S.wkStart) el.textContent = fmtElapsed(Date.now() - S.wkStart);
-  }, 1000);
-}
-function stopElapsed() {
-  clearInterval(S.elapsedInterval);
-  S.elapsedInterval = null;
-}
-
-// ── MODALS ────────────────────────────────────────────────────────────────────
-function openModal(id) { document.getElementById(id)?.classList.add('open'); }
-function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
-
-// ── MAIN RENDER ───────────────────────────────────────────────────────────────
-function render() {
-  const app = document.getElementById('app');
-  let content = '';
-  if (S.wkPhase === 'active') {
-    content = renderActiveWorkout();
-  } else if (S.wkPhase === 'done') {
-    content = renderWorkoutDone();
-  } else if (S.view === 'history') {
-    content = renderHistory();
-  } else if (S.view === 'settings') {
-    content = renderSettings();
-  } else if (S.view === 'progress') {
-    content = renderProgress();
-  } else {
-    content = renderHome();
-  }
-
-  const nav = (S.wkPhase === 'idle') ? `
-    <nav class="bottom-nav">
-      <button class="nav-item ${S.view==='home'?'active':''}" onclick="nav('home')">
-        <span class="ni">🏠</span>Home
-      </button>
-      <button class="nav-item ${S.view==='history'?'active':''}" onclick="nav('history')">
-        <span class="ni">📋</span>History
-      </button>
-      <button class="nav-item ${S.view==='progress'?'active':''}" onclick="nav('progress')">
-        <span class="ni">📈</span>Progress
-      </button>
-      <button class="nav-item ${S.view==='settings'?'active':''}" onclick="nav('settings')">
-        <span class="ni">⚙️</span>Settings
-      </button>
-    </nav>` : '';
-
-  app.innerHTML = `
-    <div id="timer-ov" class="timer-ov hidden">
-      <span id="timer-lbl" class="timer-lbl">Rest</span>
-      <div class="timer-bw"><div id="timer-bf" class="timer-bf" style="width:100%"></div></div>
-      <span id="timer-cnt" class="timer-cnt">60s</span>
-      <button class="timer-skip" onclick="stopTimer()">Skip ✕</button>
-    </div>
-    <div class="screen">${content}</div>
-    ${nav}
-    ${renderModals()}
-  `;
-
-  if (S.timerActive) updateTimerDOM();
-  if (S.timerActive) document.getElementById('timer-ov')?.classList.remove('hidden');
-  if (S.wkPhase === 'active') startElapsed();
-}
-
-function nav(v) {
-  S.view = v;
-  render();
-}
-
-// ── HOME ──────────────────────────────────────────────────────────────────────
-function renderHome() {
-  const lastSess = S.sessions[0];
-  const lastDate = lastSess ? fmtDate(lastSess.date) : 'No sessions yet';
-  const routine = getCurrentRoutine();
-
-  // Current weights for ALL routine exercises
-  const progItems = routine.map(item => {
-    const name = item.name;
-    const sug = getSuggestion(name);
-    const c = cfg(name);
-    const status = sug.inc ? `↑ +${c.inc} lbs ready` : sug.note;
-    const cls = sug.inc ? 'up' : 'hold';
-    const shortName = name.replace('Barbell ','').replace('Romanian ','RDL ').replace('Incline ','Inc ');
-    const wtDisplay = isCore(name) ? 'BW' : ((sug.lastW||sug.weight||'?') + ' lbs');
-    return `<div class="prog-item" style="--c:${c.color}">
-      <div class="prog-nm">${c.icon} ${shortName}</div>
-      <div class="prog-nm" style="color:#475569;font-size:.62rem">${c.muscles||''}</div>
-      <div class="prog-wt">${wtDisplay}</div>
-      <div class="prog-st ${cls}">${status}</div>
-    </div>`;
-  }).join('');
-
-  // Weekly muscle group checklist
-  const muscleCounts = getWeeklyMuscleCounts();
-  const muscleItems = Object.entries(muscleCounts).map(([group, count]) => {
-    const cls = count >= MUSCLE_TARGET ? 'met' : count > 0 ? 'partial' : 'zero';
-    const badge = count >= MUSCLE_TARGET ? `${count}/${MUSCLE_TARGET} ✓` : `${count}/${MUSCLE_TARGET}`;
-    return `<div class="mc-item ${cls}">
-      <span class="mc-label">${group}</span>
-      <span class="mc-badge ${cls}">${badge}</span>
-    </div>`;
-  }).join('');
-
-  return `<div class="screen-inner">
-    <div class="page-hdr">
-      <div class="page-title">💪 Barbell Coach</div>
-      <div style="font-size:.8rem;color:#475569">${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
-    </div>
-
-    <div class="home-hero" onclick="startWorkout()">
-      <div class="hero-emoji">🏋️</div>
-      <div class="hero-title">Start Full Body Workout</div>
-      <div class="hero-sub">${routine.length} exercises · Last: ${lastDate}</div>
-    </div>
-
-    <div class="section-title">Current Weights</div>
-    <div class="prog-grid">${progItems}</div>
-
-    <div class="section-title">Muscle Groups This Week <span style="font-size:.65rem;color:#334155;text-transform:none;font-weight:400">Goal: ${MUSCLE_TARGET}× per group</span></div>
-    <div class="muscle-grid">${muscleItems}</div>
-
-    ${lastSess ? `
-    <div class="section-title">Last Workout</div>
-    <div class="card-sm">
-      <div style="font-size:.82rem;color:#64748b;margin-bottom:8px">${fmtDate(lastSess.date)} · ${lastSess.label}</div>
-      ${lastSess.exercises.slice(0,4).map(ex => {
-        const done = ex.sets.filter(s=>s.w>0&&s.r>0);
-        if (!done.length) return '';
-        const best = done.reduce((a,b)=>b.r>a.r?b:a,done[0]);
-        return `<div style="font-size:.82rem;color:#94a3b8;display:flex;justify-content:space-between;margin-bottom:3px">
-          <span>${cfg(ex.name).icon} ${ex.name.replace('Barbell ','')}</span>
-          <span style="color:#e2e8f0">${best.w>0?best.w+'lbs ×':''} ${best.r} reps</span>
-        </div>`;
-      }).join('')}
-      ${lastSess.exercises.length > 4 ? `<div style="font-size:.75rem;color:#475569;margin-top:4px">+${lastSess.exercises.length-4} more</div>` : ''}
-    </div>` : ''}
-  </div>`;
-}
-
-// ── ACTIVE WORKOUT ────────────────────────────────────────────────────────────
-function startWorkout() {
-  const routine = getCurrentRoutine();
-  const missed = getMissedExercises();
-
-  // Sort: missed exercises from last session rise to the top (preserving relative order).
-  const sortedRoutine = [
-    ...routine.filter(item => missed.has(item.name)),
-    ...routine.filter(item => !missed.has(item.name)),
-  ];
-
-  const exercises = sortedRoutine.map(item => {
-    const sug = getSuggestion(item.name);
-    const w = sug.weight || 0;
-    const sets = [];
-    for (let i = 0; i < item.sets; i++) {
-      sets.push({w, r:0, n:'', done:false, isPR:false});
-    }
-    return {
-      name: item.name, targetSets: item.sets, targetReps: item.targetReps,
-      sets, suggestion: sug,
-      missedLast: missed.has(item.name),
-    };
+// ── Workout Logic ──────────────────────────────────────────────────────────
+function startWorkout(){
+  const routine=getCurrentRoutine();
+  const nonCore=routine.filter(item=>!isCore(item.name));
+  const core=routine.filter(item=>isCore(item.name));
+  const pointer=S.routinePointer??-1;
+  const startIdx=(pointer+1)%nonCore.length;
+  const rotated=[...nonCore.slice(startIdx),...nonCore.slice(0,startIdx)];
+  const sortedRoutine=[...core,...rotated];
+  const exercises=sortedRoutine.map(item=>{
+    const sug=getSuggestion(item.name);
+    const w=sug.weight||0;
+    const sets=[];
+    for(let i=0;i<item.sets;i++){sets.push({w,r:0,n:'',done:false,isPR:false});}
+    return {name:item.name,targetSets:item.sets,targetReps:item.targetReps,sets,suggestion:sug,missedLast:false};
   });
-  S.wkSession = {
-    id: 's' + Date.now() + Math.random().toString(36).slice(2,6),
-    date: new Date().toISOString().slice(0,10),
-    type: 'default',
-    label: 'Full Body',
-    notes: '',
-    startTime: Date.now(),
-    exercises,
+  S.wkSession={
+    id:'s'+Date.now()+Math.random().toString(36).slice(2,6),
+    date:new Date().toISOString().slice(0,10),
+    type:'default',label:'Full Body',notes:'',
+    startTime:Date.now(),exercises
   };
-  S.wkStart = Date.now();
-  S.wkPhase = 'active';
-  S.exOpen = {};
-  exercises.forEach(ex => { S.exOpen[ex.name] = true; });
+  S.wkStart=Date.now();
+  S.wkPhase='active';
+  S.exOpen={};
+  exercises.forEach(e=>{S.exOpen[e.name]=true;});
+  if(S.elapsedInterval) clearInterval(S.elapsedInterval);
+  S.elapsedInterval=setInterval(()=>{
+    const el=document.getElementById('elapsed');
+    if(el) el.textContent=fmtSec(Math.floor((Date.now()-S.wkStart)/1000));
+  },1000);
   render();
 }
 
-function renderActiveWorkout() {
-  if (!S.wkSession) return '';
-  const elapsed = S.wkStart ? fmtElapsed(Date.now() - S.wkStart) : '0:00';
-  const exHTML = S.wkSession.exercises.map((ex, ei) => buildExCard(ex, ei)).join('');
-
-  return `
-    <div class="wk-hdr">
-      <div class="wk-title">💪 Full Body</div>
-      <div id="wk-elapsed" class="wk-elapsed">${elapsed}</div>
-      <button class="btn btn-sm btn-success" onclick="finishWorkout()">Finish</button>
-    </div>
-    <div class="screen-inner" style="padding-top:8px">
-      ${exHTML}
-      <button class="btn btn-secondary btn-sm" style="width:100%;margin-top:4px"
-        onclick="openAddExModal('workout')">＋ Add Exercise</button>
-      <div style="height:12px"></div>
-      <button class="btn btn-ghost btn-block" onclick="confirmDiscardWorkout()">Discard Workout</button>
-    </div>`;
-}
-
-function buildExCard(ex, ei) {
-  const c = cfg(ex.name);
-  const sug = ex.suggestion;
-  const isOpen = S.exOpen[ex.name] !== false;
-  const sugChip = sug ? (sug.inc
-    ? `<span class="chip chip-up">↑ ${sug.weight} lbs</span>`
-    : sug.weight ? `<span class="chip chip-hold">${sug.weight} lbs</span>` : '') : '';
-  const missedChip = ex.missedLast
-    ? `<span class="chip chip-missed" style="margin-right:4px">↩ Missed</span>` : '';
-
-  const setsHTML = ex.sets.map((set, si) => {
-    const isDone = set.done;
-    return `<div class="set-row${isDone?' done':''}" id="set-${ei}-${si}">
-      <span class="set-num">${si+1}</span>
-      <div class="nc">
-        <button class="nc-btn" onclick="stepVal('w-${ei}-${si}',-5,0)">−</button>
-        <input id="w-${ei}-${si}" type="number" inputmode="decimal" value="${set.w||''}"
-          placeholder="lbs" min="0" step="5"
-          onchange="syncInput('w','${ei}','${si}')"
-          ${isDone?'disabled':''}>
-        <button class="nc-btn" onclick="stepVal('w-${ei}-${si}',5,0)">+</button>
-      </div>
-      <span class="set-x">×</span>
-      <div class="nc">
-        <button class="nc-btn" onclick="stepVal('r-${ei}-${si}',-1,0)">−</button>
-        <input id="r-${ei}-${si}" type="number" inputmode="numeric" value="${set.r||''}"
-          placeholder="reps" min="0" step="1"
-          onchange="syncInput('r','${ei}','${si}')"
-          ${isDone?'disabled':''}>
-        <button class="nc-btn" onclick="stepVal('r-${ei}-${si}',1,0)">+</button>
-      </div>
-      <button class="set-chk${isDone?' done':''}" onclick="markSetDone(${ei},${si})">
-        ${isDone?'✓':'○'}
-      </button>
-      ${set.isPR ? '<span class="set-pr">🏆PR</span>' : ''}
-    </div>`;
-  }).join('');
-
-  return `<div class="ex-card" id="ex-card-${ei}">
-    <div class="ex-card-hdr${isOpen?' open':''}" style="--c:${c.color}"
-      onclick="toggleEx(${ei})">
-      <span style="font-size:1.1rem">${c.icon}</span>
-      <div style="flex:1;min-width:0">
-        <div class="ex-name">${ex.name}</div>
-        ${c.muscles ? `<div class="ex-muscles">${c.muscles}</div>` : ''}
-        <div class="ex-sug" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
-          ${missedChip}<span>${sug?.note||''}</span>
-        </div>
-      </div>
-      ${sugChip}
-      <button class="btn-icon red" style="margin-left:6px"
-        onclick="event.stopPropagation();openDelExModal(${ei})">🗑</button>
-      <span class="chev">▾</span>
-    </div>
-    <div class="ex-card-body${isOpen?' open':''}">
-      ${setsHTML}
-      <div class="ex-controls">
-        <button class="btn btn-sm btn-secondary" onclick="removeSet(${ei})">− Set</button>
-        <button class="btn btn-sm btn-secondary" onclick="addSet(${ei})">+ Set</button>
-      </div>
-    </div>
-  </div>`;
-}
-
-function toggleEx(ei) {
-  const ex = S.wkSession?.exercises[ei];
-  if (!ex) return;
-  S.exOpen[ex.name] = !S.exOpen[ex.name];
-  const card = document.getElementById(`ex-card-${ei}`);
-  if (card) {
-    card.outerHTML = buildExCard(ex, ei);
-  }
-}
-
-function stepVal(id, delta, min=0) {
-  const el = document.getElementById(id);
-  if (!el || !S.wkSession) return;
-  const cur = parseFloat(el.value) || 0;
-  const nv = Math.max(min, cur + delta);
-  el.value = nv;
-  const [type, ei, si] = id.split('-');
-  const set = S.wkSession.exercises[+ei]?.sets[+si];
-  if (!set) return;
-  if (type === 'w') set.w = nv;
-  else set.r = nv;
-}
-
-function syncInput(type, ei, si) {
-  if (!S.wkSession) return;
-  const el = document.getElementById(`${type}-${ei}-${si}`);
-  if (!el) return;
-  const set = S.wkSession.exercises[+ei]?.sets[+si];
-  if (!set) return;
-  if (type === 'w') set.w = parseFloat(el.value) || 0;
-  else set.r = parseInt(el.value) || 0;
-}
-
-function markSetDone(ei, si) {
-  if (!S.wkSession) return;
-  const ex = S.wkSession.exercises[ei];
-  const set = ex?.sets[si];
-  if (!set) return;
-
-  if (set.done) {
-    set.done = false;
-    set.isPR = false;
-    renderActiveWorkout_partial(ei);
-    return;
-  }
-
-  // Read current DOM values
-  const wEl = document.getElementById(`w-${ei}-${si}`);
-  const rEl = document.getElementById(`r-${ei}-${si}`);
-  if (wEl) set.w = parseFloat(wEl.value) || 0;
-  if (rEl) set.r = parseInt(rEl.value) || 0;
-
-  set.done = true;
-
-  // PR check
-  if (!isCore(ex.name) && set.w > 0 && set.r > 0) {
-    if (checkPR(ex.name, set.w, set.r)) {
-      set.isPR = true;
-      showToast('🏆 New PR! ' + ex.name.replace('Barbell ',''), 'pr');
-    }
-  }
-
-  startTimer(ex.name);
-  renderActiveWorkout_partial(ei);
-}
-
-function renderActiveWorkout_partial(ei) {
-  if (!S.wkSession) return;
-  const ex = S.wkSession.exercises[ei];
-  const card = document.getElementById(`ex-card-${ei}`);
-  if (card && ex) {
-    card.outerHTML = buildExCard(ex, ei);
-  }
-}
-
-function addSet(ei) {
-  if (!S.wkSession) return;
-  const ex = S.wkSession.exercises[ei];
-  if (!ex) return;
-  const last = ex.sets[ex.sets.length-1] || {w:0,r:0};
-  ex.sets.push({w:last.w, r:0, n:'', done:false, isPR:false});
-  renderActiveWorkout_partial(ei);
-}
-
-function removeSet(ei) {
-  if (!S.wkSession) return;
-  const ex = S.wkSession.exercises[ei];
-  if (!ex || ex.sets.length <= 1) { showToast('Need at least 1 set'); return; }
-  ex.sets.pop();
-  renderActiveWorkout_partial(ei);
-}
-
-function openDelExModal(ei) {
-  S.pendingDelEx = ei;
-  const ex = S.wkSession?.exercises[ei];
-  const modal = document.getElementById('del-ex-modal');
-  if (modal) {
-    modal.querySelector('p').textContent = `Remove "${ex?.name}" from this workout?`;
-  }
-  openModal('del-ex-modal');
-}
-
-function doDeleteEx() {
-  if (S.pendingDelEx === null || !S.wkSession) return;
-  const ex = S.wkSession.exercises[S.pendingDelEx];
-  if (ex) delete S.exOpen[ex.name];
-  S.wkSession.exercises.splice(S.pendingDelEx, 1);
-  S.pendingDelEx = null;
-  closeModal('del-ex-modal');
-  render();
-}
-
-function openAddExModal(target) {
-  S.addExTarget = target;
-  // Build list of already-included exercises
-  const used = new Set(
-    target === 'workout'
-      ? (S.wkSession?.exercises||[]).map(e=>e.name)
-      : getCurrentRoutine().map(e=>e.name)
-  );
-
-  const cats = {upper:[], lower:[], core:[]};
-  ALL_EXERCISES.forEach(name => {
-    if (!used.has(name)) cats[cfg(name).cat].push(name);
-  });
-
-  const listHTML = Object.entries({upper:'Upper Body',lower:'Lower Body',core:'Core'}).map(([cat,label]) => {
-    if (!cats[cat].length) return '';
-    return `<div class="ex-picker-cat">${label}</div>` +
-      cats[cat].map(name => {
-        const c = cfg(name);
-        const sug = getSuggestion(name);
-        const sugText = isCore(name) ? 'Bodyweight' : sug.weight ? `${sug.weight} lbs` : 'Set weight';
-        return `<div class="ex-picker-item" onclick="doAddEx('${name.replace(/'/g,"\\'")}')">
-          <span class="ex-picker-icon">${c.icon}</span>
-          <div style="flex:1;min-width:0">
-            <div class="ex-picker-name">${name}</div>
-            ${c.muscles ? `<div style="font-size:.68rem;color:#475569">${c.muscles}</div>` : ''}
-          </div>
-          <span class="ex-picker-sug">${sugText}</span>
-        </div>`;
-      }).join('');
-  }).join('');
-
-  const modal = document.getElementById('add-ex-modal');
-  if (modal) {
-    modal.querySelector('.ex-picker-list').innerHTML = listHTML ||
-      '<div style="color:#64748b;text-align:center;padding:20px">All exercises already added</div>';
-    modal.querySelector('h3').textContent =
-      target === 'workout' ? 'Add Exercise to Workout' : 'Add Exercise to Routine';
-  }
-  openModal('add-ex-modal');
-}
-
-function doAddEx(name) {
-  closeModal('add-ex-modal');
-  if (S.addExTarget === 'routine') {
-    const routine = [...getCurrentRoutine()];
-    const tr = isCore(name) ? '8-10' : (cfg(name).cat==='lower' ? 10 : 8);
-    routine.push({name, sets:3, targetReps:tr});
-    S.customRoutines.default = routine;
-    persist();
-    render();
-    return;
-  }
-  // Add to active workout
-  if (!S.wkSession) return;
-  const sug = getSuggestion(name);
-  const tr = isCore(name) ? '8-10' : (cfg(name).cat==='lower' ? 10 : 8);
-  const sets = [];
-  for (let i=0;i<3;i++) sets.push({w:isCore(name)?0:sug.weight||0, r:0, n:'', done:false, isPR:false});
-  S.wkSession.exercises.push({name, targetSets:3, targetReps:tr, sets, suggestion:sug});
-  S.exOpen[name] = true;
-  render();
-}
-
-function confirmDiscardWorkout() {
-  openModal('discard-modal');
-}
-
-function doDiscardWorkout() {
-  closeModal('discard-modal');
-  stopTimer();
-  stopElapsed();
-  S.wkPhase = 'idle';
-  S.wkSession = null;
-  S.wkStart = 0;
-  S.view = 'home';
-  render();
-}
-
-function finishWorkout() {
-  stopTimer();
-  stopElapsed();
-  S.wkPhase = 'done';
-  render();
-}
-
-// ── WORKOUT DONE ──────────────────────────────────────────────────────────────
-function renderWorkoutDone() {
-  const s = S.wkSession;
-  if (!s) return '';
-  const durMin = Math.round((Date.now() - (s.startTime||Date.now())) / 60000);
-  let totalSets=0, totalVol=0, prs=0;
-  s.exercises.forEach(ex => {
-    ex.sets.forEach(set => {
-      if (set.done) {
-        totalSets++;
-        totalVol += (set.w||0)*(set.r||0);
-        if (set.isPR) prs++;
-      }
+function finishWorkout(){
+  if(!S.wkSession) return;
+  // update PR flags
+  S.wkSession.exercises.forEach(ex=>{
+    ex.sets.forEach(set=>{
+      if(!set.done||!set.r) return;
+      const prev=S.sessions.flatMap(s=>s.exercises?.filter(e=>e.name===ex.name)||[])
+        .flatMap(e=>e.sets||[]).filter(st=>st.done&&st.r>0);
+      const cur1rm=epley(set.w,set.r);
+      const best=Math.max(0,...prev.map(st=>epley(st.w,st.r)));
+      set.isPR=cur1rm>best;
     });
   });
-
-  const exSummary = s.exercises.map(ex => {
-    const doneSets = ex.sets.filter(s=>s.done);
-    if (!doneSets.length) return '';
-    const c = cfg(ex.name);
-    return `<div class="card-sm">
-      <div style="font-size:.82rem;font-weight:600;color:${c.color};margin-bottom:6px">
-        ${c.icon} ${ex.name}
-      </div>
-      ${doneSets.map((set,i)=>`
-        <div style="font-size:.8rem;color:#94a3b8">
-          Set ${i+1}: ${set.w>0?set.w+' lbs':isCore(ex.name)?'BW':''} × ${set.r} reps
-          ${set.isPR?'<span style="color:#f59e0b"> 🏆 PR</span>':''}
-        </div>`).join('')}
-    </div>`;
-  }).join('');
-
-  return `<div class="screen-inner">
-    <div class="page-hdr">
-      <div class="page-title">✅ Workout Done!</div>
-    </div>
-    <div class="done-stats">
-      <div class="done-stat"><div class="dsv">${durMin}</div><div class="dsl">Minutes</div></div>
-      <div class="done-stat"><div class="dsv">${totalSets}</div><div class="dsl">Sets</div></div>
-      <div class="done-stat"><div class="dsv">${prs>0?'🏆'+prs:totalSets>0?'💪':'-'}</div><div class="dsl">${prs>0?'PRs':'Done'}</div></div>
-    </div>
-    ${exSummary}
-    <div style="height:16px"></div>
-    <button class="btn btn-primary" onclick="saveWorkout()">Save Workout 💾</button>
-    <div style="height:8px"></div>
-    <button class="btn btn-ghost btn-block" onclick="confirmDiscardWorkout()">Discard</button>
-  </div>`;
-}
-
-function saveWorkout() {
-  if (!S.wkSession) return;
-  // Clean up workout-specific flags before saving
-  const saved = JSON.parse(JSON.stringify(S.wkSession));
-  saved.exercises.forEach(ex => {
-    ex.sets.forEach(set => { delete set.done; });
-  });
-  S.sessions.unshift(saved);
+  // update routinePointer
+  const routine=getCurrentRoutine();
+  const nonCore=routine.filter(r=>!isCore(r.name));
+  const sessionNonCore=(S.wkSession.exercises||[]).filter(e=>!isCore(e.name));
+  for(let i=sessionNonCore.length-1;i>=0;i--){
+    const idx=nonCore.findIndex(r=>r.name===sessionNonCore[i].name);
+    if(idx!==-1){S.routinePointer=idx;break;}
+  }
+  S.sessions.push(JSON.parse(JSON.stringify(S.wkSession)));
+  S.wkPhase='idle';
+  S.wkSession=null;
+  if(S.timerInterval){clearInterval(S.timerInterval);S.timerInterval=null;}
+  if(S.elapsedInterval){clearInterval(S.elapsedInterval);S.elapsedInterval=null;}
   persist();
-  S.wkPhase = 'idle';
-  S.wkSession = null;
-  S.wkStart = 0;
-  S.view = 'home';
   render();
-  showToast('Workout saved! 💪');
 }
 
-// ── HISTORY ───────────────────────────────────────────────────────────────────
-function renderHistory() {
-  const items = S.sessions.map((sess, idx) => {
-    const isOpen = S.histOpen[sess.id];
-    const totalSets = sess.exercises.reduce((a,ex)=>a+ex.sets.filter(s=>s.w>0||s.r>0).length,0);
-    const exercises = sess.exercises.length;
+function cancelWorkout(){
+  S.wkPhase='idle';
+  S.wkSession=null;
+  if(S.timerInterval){clearInterval(S.timerInterval);S.timerInterval=null;}
+  if(S.elapsedInterval){clearInterval(S.elapsedInterval);S.elapsedInterval=null;}
+  render();
+}
 
-    const body = isOpen ? `<div class="hist-body open">
-      ${sess.exercises.map(ex=>{
-        const validSets = ex.sets.filter(s=>s.w>0||s.r>0);
-        if (!validSets.length) return '';
-        const c = cfg(ex.name);
-        return `<div class="hist-ex">
-          <div class="hist-ex-nm">${c.icon} ${ex.name}</div>
-          <div class="hist-sets">
-            ${validSets.map((s,i)=>`<div class="hist-set-line">
-              <span style="color:#475569;font-size:.72rem">S${i+1}</span>
-              <span>${s.w>0?s.w+' lbs':'BW'} × ${s.r} reps${s.isPR?' 🏆':''}</span>
-              ${s.n?`<span style="color:#64748b;font-size:.72rem">— ${s.n}</span>`:''}
-            </div>`).join('')}
+function startTimer(exName){
+  if(S.timerInterval){clearInterval(S.timerInterval);S.timerInterval=null;}
+  S.timerActive=true;
+  S.timerSec=REST_SEC;
+  S.timerTotal=REST_SEC;
+  S.timerEx=exName;
+  S.timerInterval=setInterval(()=>{
+    S.timerSec--;
+    if(S.timerSec<=0){
+      S.timerSec=0;
+      S.timerActive=false;
+      clearInterval(S.timerInterval);
+      S.timerInterval=null;
+    }
+    renderTimerBar();
+  },1000);
+  renderTimerBar();
+}
+
+function renderTimerBar(){
+  const bar=document.getElementById('timerBar');
+  if(!bar) return;
+  if(!S.timerActive&&S.timerSec===0){bar.style.display='none';return;}
+  bar.style.display='flex';
+  const pct=(S.timerSec/S.timerTotal)*100;
+  const circ=2*Math.PI*18;
+  const offset=circ*(1-pct/100);
+  bar.innerHTML=`
+    <div class="timer-ring">
+      <svg width="44" height="44" viewBox="0 0 44 44">
+        <circle cx="22" cy="22" r="18" fill="none" stroke="var(--surface2)" stroke-width="4"/>
+        <circle cx="22" cy="22" r="18" fill="none" stroke="${S.timerSec<=10?'var(--red)':'var(--accent)'}" stroke-width="4"
+          stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round"/>
+      </svg>
+      <div class="timer-ring-num">${fmtSec(S.timerSec)}</div>
+    </div>
+    <div style="flex:1;min-width:0">
+      <div style="font-weight:700;font-size:13px">Rest Timer</div>
+      <div style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${S.timerEx}</div>
+    </div>
+    <button class="btn btn-sm btn-ghost" onclick="skipTimer()">Skip</button>
+  `;
+}
+
+function skipTimer(){
+  S.timerSec=0;S.timerActive=false;
+  if(S.timerInterval){clearInterval(S.timerInterval);S.timerInterval=null;}
+  renderTimerBar();
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function render(){
+  const app=document.getElementById('app');
+  let html='';
+  if(S.pendingDelSession){html+=renderDelSessionModal();}
+  if(S.pendingDelEx){html+=renderDelExModal();}
+  html+=`<div id="timerBar" style="display:none" class="timer-bar"></div>`;
+  switch(S.view){
+    case 'home':html+=renderHome();break;
+    case 'history':html+=renderHistory();break;
+    case 'progress':html+=renderProgress();break;
+    case 'settings':html+=renderSettings();break;
+  }
+  html+=renderNav();
+  app.innerHTML=html;
+  renderTimerBar();
+  attachEvents();
+}
+
+function renderNav(){
+  const tabs=[
+    {id:'home',icon:'<path stroke-linecap="round" stroke-linejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>',label:'Home'},
+    {id:'history',icon:'<path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>',label:'History'},
+    {id:'progress',icon:'<path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>',label:'Progress'},
+    {id:'settings',icon:'<path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/>',label:'Settings'},
+  ];
+  return `<nav id="nav">${tabs.map(t=>`<button class="nav-btn${S.view===t.id?' active':''}" onclick="setView('${t.id}')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">${t.icon}</svg>${t.label}</button>`).join('')}</nav>`;
+}
+
+function renderHome(){
+  if(S.wkPhase==='active') return renderWorkout();
+  const mg=getMuscleGroupsThisWeek();
+  const rec={Chest:3,Back:3,Shoulders:2,Triceps:2,Biceps:2,Quads:2,Hamstrings:2,Glutes:2,Core:4};
+  const weekSes=getWeekSessions();
+  const routine=getCurrentRoutine();
+  const nonCore=routine.filter(r=>!isCore(r.name));
+  const core=routine.filter(r=>isCore(r.name));
+  const ptr=S.routinePointer??-1;
+  const startIdx=(ptr+1)%nonCore.length;
+  const nextEx=[...core,...nonCore.slice(startIdx),...nonCore.slice(0,startIdx)];
+
+  let html=`<div class="header"><h1>💪 Barbell Coach</h1><span class="elapsed" id="elapsed"></span></div>`;
+  // Stats
+  html+=`<div class="stat-row">
+    <div class="stat-box"><div class="val">${weekSes.length}</div><div class="lbl">Sessions This Week</div></div>
+    <div class="stat-box"><div class="val">${S.sessions.length}</div><div class="lbl">Total Sessions</div></div>
+  </div>`;
+  // Next workout preview
+  html+=`<div class="section-title">Next Workout Order</div>`;
+  html+=`<div class="card" style="padding:12px">`;
+  nextEx.slice(0,6).forEach((item,i)=>{
+    const cfg=EXERCISE_CFG[item.name]||{};
+    html+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;${i<nextEx.slice(0,6).length-1?'border-bottom:1px solid var(--border)':''}">
+      <span style="color:var(--muted);font-size:12px;width:18px;text-align:right">${i+1}</span>
+      <span>${cfg.icon||'🏋️'}</span>
+      <span style="font-size:13px;font-weight:600">${item.name}</span>
+      ${isCore(item.name)?'<span class="tag" style="background:#818cf820;color:#818cf8">Core</span>':''}
+    </div>`;
+  });
+  if(nextEx.length>6) html+=`<div style="font-size:12px;color:var(--muted);padding-top:6px">+${nextEx.length-6} more…</div>`;
+  html+=`</div>`;
+  html+=`<div style="padding:8px 12px"><button class="btn btn-primary" style="width:100%;padding:14px" onclick="startWorkout()">▶ Start Workout</button></div>`;
+  // Muscle groups this week
+  html+=`<div class="section-title">Muscle Groups This Week</div><div class="card">`;
+  Object.entries(mg).forEach(([g,cnt])=>{
+    const target=rec[g]||2;
+    const pct=Math.min(100,Math.round(cnt/target*100));
+    const color=pct>=100?'var(--green)':pct>=50?'var(--yellow)':'var(--accent)';
+    html+=`<div class="mg-row"><span style="width:90px;font-size:13px;font-weight:600">${g}</span><div class="mg-bar-bg"><div class="mg-bar-fill" style="width:${pct}%;background:${color}"></div></div><span style="font-size:12px;color:var(--muted);width:40px;text-align:right">${cnt}/${target}</span></div>`;
+  });
+  html+=`</div>`;
+  // Current weights
+  html+=`<div class="section-title">Current Weights</div><div class="card">`;
+  routine.forEach(item=>{
+    const sug=getSuggestion(item.name);
+    const cfg=EXERCISE_CFG[item.name]||{};
+    html+=`<div class="cur-weight-row"><span style="display:flex;align-items:center;gap:6px;font-size:13px">${cfg.icon||''} ${item.name}</span><span style="font-weight:700;color:var(--accent)">${sug.weight?sug.weight+'lb':'—'}</span></div>`;
+  });
+  html+=`</div>`;
+  return html;
+}
+
+function renderWorkout(){
+  const ses=S.wkSession;
+  let html=`<div class="header"><h1>🏋️ Workout</h1><span class="elapsed" id="elapsed">${fmtSec(Math.floor((Date.now()-S.wkStart)/1000))}</span></div>`;
+  html+=`<div style="display:flex;gap:8px;padding:4px 12px 8px">
+    <button class="btn btn-ghost btn-sm" onclick="addExercisePrompt('workout')">+ Add Exercise</button>
+    <button class="btn btn-green btn-sm" style="margin-left:auto" onclick="confirmFinish()">Finish</button>
+    <button class="btn btn-ghost btn-sm" onclick="confirmCancel()">Cancel</button>
+  </div>`;
+  ses.exercises.forEach((exItem,ei)=>{
+    html+=buildExCard(exItem,ei,true);
+  });
+  html+=`<div id="addExPanel" style="display:none"></div>`;
+  return html;
+}
+
+function buildExCard(exItem,ei,inWorkout){
+  const cfg=EXERCISE_CFG[exItem.name]||{icon:'🏋️',color:'#6366f1',muscles:''};
+  const open=S.exOpen[exItem.name];
+  const sug=exItem.suggestion||{};
+  let html=`<div class="ex-card" id="ex_${ei}">
+    <div class="ex-header" onclick="toggleEx('${exItem.name}')">
+      <div class="ex-icon" style="background:${cfg.color}20">${cfg.icon}</div>
+      <div class="ex-info">
+        <div class="ex-name">${exItem.name}</div>
+        <div class="ex-muscles">${cfg.muscles||''} · ${exItem.targetSets}×${exItem.targetReps}</div>
+      </div>
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="transform:${open?'rotate(180deg)':'none'};transition:.2s"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+    </div>`;
+  if(open){
+    html+=`<div class="ex-body">`;
+    if(inWorkout&&sug.note){
+      html+=`<div class="suggestion-box">💡 <strong>${sug.weight?sug.weight+'lb · ':''}${sug.reps?sug.reps+' reps · ':''}</strong>${sug.note}</div>`;
+    }
+    html+=`<div class="set-row" style="margin-bottom:4px">
+      <div style="text-align:center;font-size:11px;color:var(--muted)">SET</div>
+      <div style="text-align:center;font-size:11px;color:var(--muted)">WEIGHT (lb)</div>
+      <div style="text-align:center;font-size:11px;color:var(--muted)">REPS</div>
+      <div style="text-align:center;font-size:11px;color:var(--muted)">DONE</div>
+    </div>`;
+    exItem.sets.forEach((set,si)=>{
+      const pr=set.isPR?`<span class="pr-badge">PR</span>`:'';
+      if(inWorkout){
+        html+=`<div class="set-row">
+          <div class="set-num">${si+1}</div>
+          <input type="number" class="set-input" value="${set.w||''}" placeholder="0" onchange="setVal(${ei},${si},'w',this.value)" inputmode="decimal">
+          <input type="number" class="set-input" value="${set.r||''}" placeholder="0" onchange="setVal(${ei},${si},'r',this.value)" inputmode="decimal">
+          <div class="set-done">
+            <button class="${set.done?'done':''}" onclick="toggleSetDone(${ei},${si})">${set.done?'✓':'○'}</button>
           </div>
         </div>`;
-      }).join('')}
-      ${sess.notes?`<div style="font-size:.8rem;color:#64748b;margin-top:6px;padding-top:6px;border-top:1px solid #1e2a3a">📝 ${sess.notes}</div>`:''}
-    </div>` : `<div class="hist-body"></div>`;
-
-    return `<div class="hist-card">
-      <div class="hist-hdr" onclick="toggleHist('${sess.id}')">
-        <div>
-          <div class="hist-date">${fmtDate(sess.date)}</div>
-          <div class="hist-meta">${sess.label || 'Full Body'} · ${exercises} exercises · ${totalSets} sets</div>
-        </div>
-        <button class="btn-icon red" onclick="event.stopPropagation();openDelSessModal('${sess.id}')">🗑</button>
-        <span style="color:#475569;font-size:.8rem;margin-left:4px">${isOpen?'▲':'▾'}</span>
-      </div>
-      ${body}
-    </div>`;
-  }).join('');
-
-  return `<div class="screen-inner">
-    <div class="page-hdr">
-      <div class="page-title">📋 History</div>
-      <span style="color:#64748b;font-size:.82rem">${S.sessions.length} sessions</span>
-    </div>
-    ${items || '<div style="color:#475569;text-align:center;padding:40px">No sessions yet</div>'}
-  </div>`;
-}
-
-function toggleHist(id) {
-  S.histOpen[id] = !S.histOpen[id];
-  render();
-}
-
-function openDelSessModal(id) {
-  S.pendingDelSession = id;
-  const sess = S.sessions.find(s=>s.id===id);
-  const modal = document.getElementById('del-sess-modal');
-  if (modal && sess) {
-    modal.querySelector('p').textContent = `Delete the session from ${fmtDate(sess.date)}? This cannot be undone.`;
-  }
-  openModal('del-sess-modal');
-}
-
-function doDeleteSession() {
-  if (!S.pendingDelSession) return;
-  S.sessions = S.sessions.filter(s=>s.id!==S.pendingDelSession);
-  S.pendingDelSession = null;
-  persist();
-  closeModal('del-sess-modal');
-  render();
-  showToast('Session deleted');
-}
-
-// ── SETTINGS ──────────────────────────────────────────────────────────────────
-function renderSettings() {
-  const routine = getCurrentRoutine();
-  const isModified = !!S.customRoutines.default;
-
-  const routineHTML = routine.map((ex, i) => {
-    const c = cfg(ex.name);
-    return `<div class="s-row" style="border-left:3px solid ${c.color}">
-      <span class="ri">${c.icon}</span>
-      <div class="rinfo">
-        <div class="rname">${ex.name}</div>
-        <div class="rmeta">${ex.sets} sets × ${ex.targetReps} reps</div>
-      </div>
-      <div style="display:flex;gap:3px;align-items:center">
-        ${i>0?`<button class="btn-icon" onclick="moveRoutineEx(${i},-1)" title="Move up">↑</button>`:'<div style="width:30px"></div>'}
-        ${i<routine.length-1?`<button class="btn-icon" onclick="moveRoutineEx(${i},1)" title="Move down">↓</button>`:'<div style="width:30px"></div>'}
-        <button class="btn-icon red" onclick="removeRoutineEx(${i})">✕</button>
-      </div>
-    </div>`;
-  }).join('');
-
-  return `<div class="screen-inner">
-    <div class="page-hdr">
-      <div class="page-title">⚙️ Settings</div>
-    </div>
-
-    <div class="section-title">Default Routine ${isModified?'<span style="color:#6366f1;font-size:.7rem">(edited)</span>':''}</div>
-    ${routineHTML}
-    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-      <button class="btn btn-secondary btn-sm" onclick="openAddExModal('routine')">＋ Add Exercise</button>
-      ${isModified?`<button class="btn btn-ghost btn-sm" onclick="resetRoutine()">Reset to Default</button>`:''}
-    </div>
-
-    <div class="section-title" style="margin-top:16px">Data</div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <button class="btn btn-secondary btn-sm" onclick="exportData()">📤 Export Workout Data</button>
-      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('import-input').click()">📥 Import Workout Data</button>
-      <input id="import-input" type="file" accept=".json" style="display:none" onchange="importData(event)">
-      <button class="btn btn-danger btn-sm" onclick="openModal('clear-modal')">🗑️ Clear All Data</button>
-    </div>
-
-    <div class="section-title" style="margin-top:16px">About</div>
-    <div class="card-sm" style="font-size:.82rem;color:#64748b;line-height:1.7">
-      <div>Progressive overload: weight increases after ${OVERLOAD_SESSIONS} sessions with ALL sets strictly over target reps.</div>
-      <div style="margin-top:6px">Minimum increment: 5 lbs per lift.</div>
-      <div style="margin-top:6px">Rest timer: ${REST_SEC} seconds after each set.</div>
-      <div style="margin-top:6px;color:#475569">${S.sessions.length} sessions recorded · ${lsOk()?'✓ Syncing to device':'⚠ Storage unavailable'}</div>
-    </div>
-  </div>`;
-}
-
-function moveRoutineEx(idx, dir) {
-  const routine = [...getCurrentRoutine()];
-  const ni = idx + dir;
-  if (ni < 0 || ni >= routine.length) return;
-  [routine[idx], routine[ni]] = [routine[ni], routine[idx]];
-  S.customRoutines.default = routine;
-  persist();
-  render();
-}
-
-function removeRoutineEx(idx) {
-  const routine = [...getCurrentRoutine()];
-  if (routine.length <= 1) { showToast('Need at least 1 exercise'); return; }
-  routine.splice(idx, 1);
-  S.customRoutines.default = routine;
-  persist();
-  render();
-}
-
-function resetRoutine() {
-  delete S.customRoutines.default;
-  persist();
-  render();
-  showToast('Routine reset to default');
-}
-
-function exportData() {
-  const data = JSON.stringify({v:2, sessions:S.sessions, customRoutines:S.customRoutines, exported:new Date().toISOString()}, null, 2);
-  const blob = new Blob([data], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `barbell-coach-${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('Data exported!');
-}
-
-function importData(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const d = JSON.parse(e.target.result);
-      if (!d || !d.sessions) { showToast('Invalid file'); return; }
-      if (confirm(`Import ${d.sessions.length} sessions? Current data will be replaced.`)) {
-        S.sessions = d.sessions;
-        if (d.customRoutines) S.customRoutines = d.customRoutines;
-        persist();
-        render();
-        showToast('Data imported!');
+      } else {
+        html+=`<div class="set-row">
+          <div class="set-num">${si+1}${pr}</div>
+          <div style="text-align:center;font-size:14px">${set.w?set.w+'lb':'—'}</div>
+          <div style="text-align:center;font-size:14px">${set.r||'—'}</div>
+          <div style="text-align:center">${set.done?'<span style="color:var(--green)">✓</span>':'<span style="color:var(--muted)">—</span>'}</div>
+        </div>`;
       }
-    } catch(err) { showToast('Error reading file'); }
+    });
+    if(inWorkout){
+      html+=`<div style="display:flex;gap:6px;margin-top:8px">
+        <button class="btn btn-ghost btn-sm" onclick="addSet(${ei})">+ Set</button>
+        ${exItem.sets.length>1?`<button class="btn btn-ghost btn-sm" onclick="removeSet(${ei})">- Set</button>`:''}
+        <button class="btn btn-sm" style="background:var(--surface2);margin-left:auto;color:var(--red)" onclick="removeExFromWorkout(${ei})">Remove</button>
+      </div>`;
+    }
+    html+=`</div>`;
+  }
+  html+=`</div>`;
+  return html;
+}
+
+function renderHistory(){
+  let html=`<div class="header"><h1>📅 History</h1></div>`;
+  const sorted=[...S.sessions].sort((a,b)=>b.date.localeCompare(a.date));
+  if(!sorted.length){html+=`<div class="empty">No sessions yet</div>`;return html;}
+  sorted.forEach(ses=>{
+    const open=S.histOpen[ses.id];
+    const vol=ses.exercises?.reduce((acc,ex)=>acc+ex.sets.filter(s=>s.done&&s.r>0).reduce((a,s)=>a+s.w*s.r,0),0)||0;
+    const prs=ses.exercises?.reduce((acc,ex)=>acc+ex.sets.filter(s=>s.isPR).length,0)||0;
+    html+=`<div class="hist-session">
+      <div class="hist-header" onclick="toggleHist('${ses.id}')">
+        <div>
+          <div style="font-weight:700">${fmtDate(ses.date)}</div>
+          <div style="font-size:12px;color:var(--muted)">${ses.exercises?.length||0} exercises · ${vol?Math.round(vol).toLocaleString()+'lb vol':''}${prs?' · ⭐'+prs+' PR':''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="btn btn-sm" style="color:var(--red);background:var(--surface2)" onclick="event.stopPropagation();pendingDelSession('${ses.id}')">🗑</button>
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="transform:${open?'rotate(180deg)':'none'}"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+      </div>`;
+    if(open){
+      html+=`<div class="hist-body">`;
+      ses.exercises?.forEach((exItem,ei)=>{html+=buildExCard(exItem,ei,false);});
+      html+=`</div>`;
+    }
+    html+=`</div>`;
+  });
+  return html;
+}
+
+function renderProgress(){
+  const allNames=[...new Set(S.sessions.flatMap(s=>s.exercises?.map(e=>e.name)||[]))].sort();
+  let html=`<div class="header"><h1>📈 Progress</h1></div>`;
+  if(!S.progressEx||!allNames.includes(S.progressEx)) S.progressEx=allNames[0]||null;
+  html+=`<div style="padding:8px 12px"><select style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px" onchange="S.progressEx=this.value;render()">`;
+  allNames.forEach(n=>{html+=`<option value="${n}"${n===S.progressEx?' selected':''}>${n}</option>`;});
+  html+=`</select></div>`;
+  html+=`<div style="padding:0 12px 8px"><div class="toggle"><button class="${S.progressMetric==='1rm'?'active':''}" onclick="S.progressMetric='1rm';render()">Est. 1RM</button><button class="${S.progressMetric==='vol'?'active':''}" onclick="S.progressMetric='vol';render()">Volume</button><button class="${S.progressMetric==='weight'?'active':''}" onclick="S.progressMetric='weight';render()">Max Weight</button></div></div>`;
+  if(S.progressEx){
+    const data=S.sessions.filter(s=>s.exercises?.some(e=>e.name===S.progressEx))
+      .map(s=>{
+        const exItem=s.exercises.find(e=>e.name===S.progressEx);
+        const done=exItem.sets.filter(st=>st.done&&st.r>0);
+        if(!done.length) return null;
+        let val=0;
+        if(S.progressMetric==='1rm') val=Math.max(...done.map(st=>epley(st.w,st.r)));
+        else if(S.progressMetric==='vol') val=done.reduce((a,st)=>a+st.w*st.r,0);
+        else val=Math.max(...done.map(st=>st.w));
+        return {date:s.date,val};
+      }).filter(Boolean);
+    if(data.length){
+      const maxVal=Math.max(...data.map(d=>d.val));
+      const minVal=Math.min(...data.map(d=>d.val));
+      const range=maxVal-minVal||1;
+      const W=360,H=80,pad=10;
+      const pts=data.map((d,i)=>{
+        const x=pad+(i/(Math.max(data.length-1,1)))*(W-pad*2);
+        const y=H-pad-(((d.val-minVal)/range)*(H-pad*2));
+        return `${x},${y}`;
+      });
+      const last=data[data.length-1];
+      const prev=data[data.length-2];
+      const diff=prev?last.val-prev.val:0;
+      const cfg=EXERCISE_CFG[S.progressEx]||{};
+      html+=`<div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+          <div>
+            <div style="font-size:24px;font-weight:700">${Math.round(last.val)}${S.progressMetric==='vol'?'lb':S.progressMetric==='weight'?'lb':'lb 1RM'}</div>
+            <div style="font-size:12px;color:${diff>=0?'var(--green)':'var(--red)'}">${diff>=0?'▲':'▼'} ${Math.abs(Math.round(diff))} from last</div>
+          </div>
+          <div style="font-size:13px;color:var(--muted)">${data.length} sessions</div>
+        </div>
+        <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px">
+          <polyline points="${pts.join(' ')}" fill="none" stroke="${cfg.color||'var(--accent)'}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+          ${data.map((d,i)=>{const[x,y]=pts[i].split(',');return `<circle cx="${x}" cy="${y}" r="3" fill="${cfg.color||'var(--accent)'}"/>`;}).join('')}
+        </svg>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px">
+          <span>${fmtDate(data[0].date)}</span><span>${fmtDate(last.date)}</span>
+        </div>
+      </div>`;
+      // recent history table
+      html+=`<div class="section-title">Recent Sessions</div>`;
+      [...data].reverse().slice(0,10).forEach(d=>{
+        const bar=Math.round((d.val/maxVal)*100);
+        html+=`<div style="padding:6px 12px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:12px;color:var(--muted);width:90px">${fmtDate(d.date)}</span>
+          <div class="mg-bar-bg" style="flex:1"><div class="mg-bar-fill" style="width:${bar}%;background:${cfg.color||'var(--accent)'}"></div></div>
+          <span style="font-size:13px;font-weight:700;width:60px;text-align:right">${Math.round(d.val)}lb</span>
+        </div>`;
+      });
+    } else {
+      html+=`<div class="empty">No data for this exercise</div>`;
+    }
+  }
+  return html;
+}
+
+function renderSettings(){
+  const routine=getCurrentRoutine();
+  const customR=S.customRoutines?.default;
+  let html=`<div class="header"><h1>⚙️ Settings</h1></div>`;
+  html+=`<div class="section-title">Default Routine (${routine.length} exercises)</div>`;
+  html+=`<div class="card">`;
+  if(S.settingsRoutineEdit){
+    routine.forEach((item,i)=>{
+      const cfg=EXERCISE_CFG[item.name]||{};
+      html+=`<div class="routine-item">
+        <span>${cfg.icon||'🏋️'}</span>
+        <span style="flex:1;font-size:13px">${item.name}</span>
+        <input type="number" value="${item.sets}" onchange="updateRoutineItem(${i},'sets',this.value)" style="width:44px" inputmode="numeric">
+        <span style="font-size:12px;color:var(--muted)">sets</span>
+        <input type="text" value="${item.targetReps}" onchange="updateRoutineItem(${i},'targetReps',this.value)" style="width:48px" inputmode="numeric">
+        <span style="font-size:12px;color:var(--muted)">reps</span>
+        <button onclick="removeRoutineItem(${i})" style="color:var(--red);font-size:16px;padding:4px">✕</button>
+      </div>`;
+    });
+    html+=`<div style="margin-top:8px;display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="addExercisePrompt('routine')">+ Add Exercise</button>
+      <button class="btn btn-green btn-sm" onclick="S.settingsRoutineEdit=false;render()">Done</button>
+      ${customR?`<button class="btn btn-sm" style="background:var(--surface2);color:var(--red)" onclick="resetRoutine()">Reset</button>`:''}
+    </div>`;
+  } else {
+    routine.forEach((item,i)=>{
+      const cfg=EXERCISE_CFG[item.name]||{};
+      html+=`<div class="cur-weight-row">
+        <span style="display:flex;align-items:center;gap:6px;font-size:13px">${cfg.icon||''} ${item.name}</span>
+        <span style="font-size:12px;color:var(--muted)">${item.sets}×${item.targetReps}</span>
+      </div>`;
+    });
+    html+=`<div style="margin-top:10px"><button class="btn btn-ghost btn-sm" onclick="S.settingsRoutineEdit=true;render()">✏️ Edit Routine</button></div>`;
+  }
+  html+=`</div>`;
+  html+=`<div id="addExPanel2" style="display:none"></div>`;
+  // Available exercises
+  html+=`<div class="section-title">All Available Exercises</div><div class="card">`;
+  Object.entries(EXERCISE_CFG).forEach(([name,cfg])=>{
+    html+=`<div class="cur-weight-row"><span style="display:flex;align-items:center;gap:6px;font-size:13px">${cfg.icon} ${name}</span><span class="tag" style="background:${cfg.cat==='upper'?'#3b82f620':cfg.cat==='lower'?'#22c55e20':'#818cf820'};color:${cfg.cat==='upper'?'#3b82f6':cfg.cat==='lower'?'#22c55e':'#818cf8'}">${cfg.muscles}</span></div>`;
+  });
+  html+=`</div>`;
+  // Data
+  html+=`<div class="section-title">Data</div><div class="card">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn btn-ghost" onclick="exportData()">📤 Export JSON</button>
+      <label class="btn btn-ghost" style="cursor:pointer">📥 Import JSON<input type="file" accept=".json" style="display:none" onchange="importData(this)"></label>
+      <button class="btn btn-sm" style="background:var(--surface2);color:var(--red)" onclick="confirmClearData()">🗑 Clear All Data</button>
+    </div>
+  </div>`;
+  return html;
+}
+
+function renderAddExPanel(target){
+  const routine=getCurrentRoutine();
+  const inRoutine=routine.map(r=>r.name);
+  const all=Object.keys(EXERCISE_CFG).filter(n=>target==='routine'?!inRoutine.includes(n):true);
+  const q=(S.addExSearch||'').toLowerCase();
+  const filtered=q?all.filter(n=>n.toLowerCase().includes(q)):all;
+  let html=`<div class="card" style="margin-top:4px">
+    <div style="font-weight:700;margin-bottom:8px">Add Exercise to ${target==='workout'?'Workout':'Routine'}</div>
+    <input type="text" placeholder="Search…" value="${S.addExSearch||''}" oninput="S.addExSearch=this.value;refreshAddPanel('${target}')" style="width:100%;margin-bottom:8px">
+    <div style="max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:4px">`;
+  filtered.forEach(n=>{
+    const cfg=EXERCISE_CFG[n];
+    html+=`<button class="btn btn-ghost" style="justify-content:flex-start;gap:8px;padding:8px 10px" onclick="addExercise('${n}','${target}')">
+      <span>${cfg.icon}</span><span style="flex:1;text-align:left;font-size:13px">${n}</span>
+      <span style="font-size:11px;color:var(--muted)">${cfg.muscles}</span>
+    </button>`;
+  });
+  if(!filtered.length) html+=`<div class="empty" style="padding:16px">No exercises found</div>`;
+  html+=`</div><button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="closeAddPanel('${target}')">Cancel</button></div>`;
+  return html;
+}
+
+function renderDelSessionModal(){
+  return `<div class="modal-overlay"><div class="modal">
+    <h3>Delete Session?</h3><p>This action cannot be undone.</p>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="S.pendingDelSession=null;render()">Cancel</button>
+      <button class="btn btn-red" onclick="deleteSession(S.pendingDelSession)">Delete</button>
+    </div>
+  </div></div>`;
+}
+
+function renderDelExModal(){
+  return `<div class="modal-overlay"><div class="modal">
+    <h3>Remove Exercise?</h3><p>Remove "${S.pendingDelEx?.name}" from this workout?</p>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="S.pendingDelEx=null;render()">Cancel</button>
+      <button class="btn btn-red" onclick="doRemoveEx()">Remove</button>
+    </div>
+  </div></div>`;
+}
+
+// ── Event handlers ─────────────────────────────────────────────────────────
+function attachEvents(){}
+
+window.setView=function(v){S.view=v;render();}
+window.toggleEx=function(name){S.exOpen[name]=!S.exOpen[name];render();}
+window.toggleHist=function(id){S.histOpen[id]=!S.histOpen[id];render();}
+
+window.setVal=function(ei,si,field,val){
+  if(!S.wkSession) return;
+  const set=S.wkSession.exercises[ei].sets[si];
+  set[field]=field==='r'?parseInt(val)||0:parseFloat(val)||0;
+}
+
+window.toggleSetDone=function(ei,si){
+  if(!S.wkSession) return;
+  const ex=S.wkSession.exercises[ei];
+  const set=ex.sets[si];
+  set.done=!set.done;
+  if(set.done&&set.r>0) startTimer(ex.name);
+  render();
+}
+
+window.addSet=function(ei){
+  if(!S.wkSession) return;
+  const ex=S.wkSession.exercises[ei];
+  const last=ex.sets[ex.sets.length-1];
+  ex.sets.push({w:last?.w||0,r:0,n:'',done:false,isPR:false});
+  render();
+}
+
+window.removeSet=function(ei){
+  if(!S.wkSession) return;
+  const ex=S.wkSession.exercises[ei];
+  if(ex.sets.length>1) ex.sets.pop();
+  render();
+}
+
+window.removeExFromWorkout=function(ei){
+  S.pendingDelEx={name:S.wkSession.exercises[ei].name,idx:ei};
+  render();
+}
+
+window.doRemoveEx=function(){
+  if(!S.pendingDelEx||!S.wkSession) return;
+  S.wkSession.exercises.splice(S.pendingDelEx.idx,1);
+  S.pendingDelEx=null;
+  render();
+}
+
+window.startWorkout=startWorkout;
+window.finishWorkout=finishWorkout;
+window.cancelWorkout=cancelWorkout;
+window.skipTimer=skipTimer;
+
+window.confirmFinish=function(){
+  if(confirm('Finish workout?')) finishWorkout();
+}
+window.confirmCancel=function(){
+  if(confirm('Cancel workout? Progress will be lost.')) cancelWorkout();
+}
+
+window.pendingDelSession=function(id){S.pendingDelSession=id;render();}
+window.deleteSession=function(id){
+  S.sessions=S.sessions.filter(s=>s.id!==id);
+  S.pendingDelSession=null;
+  persist();render();
+}
+
+window.addExercisePrompt=function(target){
+  S.addExTarget=target;S.addExSearch='';
+  const panelId=target==='workout'?'addExPanel':'addExPanel2';
+  const panel=document.getElementById(panelId);
+  if(panel){panel.style.display='block';panel.innerHTML=renderAddExPanel(target);}
+}
+
+window.refreshAddPanel=function(target){
+  const panelId=target==='workout'?'addExPanel':'addExPanel2';
+  const panel=document.getElementById(panelId);
+  if(panel) panel.innerHTML=renderAddExPanel(target);
+}
+
+window.closeAddPanel=function(target){
+  const panelId=target==='workout'?'addExPanel':'addExPanel2';
+  const panel=document.getElementById(panelId);
+  if(panel){panel.style.display='none';panel.innerHTML='';}
+}
+
+window.addExercise=function(name,target){
+  if(target==='workout'){
+    if(!S.wkSession) return;
+    const sug=getSuggestion(name);
+    const routine=getCurrentRoutine();
+    const rItem=routine.find(r=>r.name===name)||{sets:3,targetReps:8};
+    const sets=[];
+    for(let i=0;i<rItem.sets;i++) sets.push({w:sug.weight||0,r:0,n:'',done:false,isPR:false});
+    S.wkSession.exercises.push({name,targetSets:rItem.sets,targetReps:rItem.targetReps,sets,suggestion:sug,missedLast:false});
+    S.exOpen[name]=true;
+  } else {
+    if(!S.customRoutines) S.customRoutines={};
+    if(!S.customRoutines.default) S.customRoutines.default=JSON.parse(JSON.stringify(DEFAULT_ROUTINE));
+    S.customRoutines.default.push({name,sets:3,targetReps:8});
+    persist();
+  }
+  S.addExSearch='';
+  render();
+}
+
+window.updateRoutineItem=function(i,field,val){
+  if(!S.customRoutines) S.customRoutines={};
+  if(!S.customRoutines.default) S.customRoutines.default=JSON.parse(JSON.stringify(DEFAULT_ROUTINE));
+  S.customRoutines.default[i][field]=field==='sets'?parseInt(val)||1:val;
+  persist();
+}
+
+window.removeRoutineItem=function(i){
+  if(!S.customRoutines) S.customRoutines={};
+  if(!S.customRoutines.default) S.customRoutines.default=JSON.parse(JSON.stringify(DEFAULT_ROUTINE));
+  S.customRoutines.default.splice(i,1);
+  persist();render();
+}
+
+window.resetRoutine=function(){
+  if(confirm('Reset to default routine?')){
+    if(S.customRoutines) delete S.customRoutines.default;
+    persist();render();
+  }
+}
+
+window.exportData=function(){
+  const data=JSON.stringify({sessions:S.sessions,customRoutines:S.customRoutines,routinePointer:S.routinePointer},null,2);
+  const a=document.createElement('a');
+  a.href='data:application/json,'+encodeURIComponent(data);
+  a.download='barbell-coach-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+}
+
+window.importData=function(input){
+  const file=input.files[0];if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      if(d.sessions) S.sessions=d.sessions;
+      if(d.customRoutines) S.customRoutines=d.customRoutines;
+      if(d.routinePointer!==undefined) S.routinePointer=d.routinePointer;
+      persist();render();
+      alert('Import successful! '+S.sessions.length+' sessions loaded.');
+    }catch(err){alert('Import failed: invalid file.');}
   };
   reader.readAsText(file);
-  event.target.value = '';
 }
 
-function doClearData() {
-  S.sessions = JSON.parse(JSON.stringify(SEED_SESSIONS));
-  S.customRoutines = {};
-  persist();
-  closeModal('clear-modal');
-  render();
-  showToast('Data cleared — seed sessions restored');
-}
-
-// ── MODALS ────────────────────────────────────────────────────────────────────
-function renderModals() {
-  return `
-    <!-- Delete Session -->
-    <div id="del-sess-modal" class="modal-bg">
-      <div class="modal">
-        <h3>Delete Session?</h3>
-        <p>This session will be permanently removed.</p>
-        <div class="modal-btns">
-          <button class="btn btn-ghost" onclick="closeModal('del-sess-modal')">Cancel</button>
-          <button class="btn btn-danger" onclick="doDeleteSession()">Delete</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Delete Exercise from Workout -->
-    <div id="del-ex-modal" class="modal-bg">
-      <div class="modal">
-        <h3>Remove Exercise?</h3>
-        <p></p>
-        <div class="modal-btns">
-          <button class="btn btn-ghost" onclick="closeModal('del-ex-modal')">Cancel</button>
-          <button class="btn btn-danger" onclick="doDeleteEx()">Remove</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Add Exercise Picker -->
-    <div id="add-ex-modal" class="modal-bg add-ex-modal">
-      <div class="modal">
-        <h3>Add Exercise</h3>
-        <div class="ex-picker-list"></div>
-        <button class="btn btn-ghost btn-block" onclick="closeModal('add-ex-modal')">Cancel</button>
-      </div>
-    </div>
-
-    <!-- Discard Workout -->
-    <div id="discard-modal" class="modal-bg">
-      <div class="modal">
-        <h3>Discard Workout?</h3>
-        <p>All progress in this session will be lost.</p>
-        <div class="modal-btns">
-          <button class="btn btn-ghost" onclick="closeModal('discard-modal')">Keep Going</button>
-          <button class="btn btn-danger" onclick="doDiscardWorkout()">Discard</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Clear All Data -->
-    <div id="clear-modal" class="modal-bg">
-      <div class="modal">
-        <h3>Clear All Data?</h3>
-        <p>All saved sessions will be removed and seed data restored. This cannot be undone.</p>
-        <div class="modal-btns">
-          <button class="btn btn-ghost" onclick="closeModal('clear-modal')">Cancel</button>
-          <button class="btn btn-danger" onclick="doClearData()">Clear All</button>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-// ── PROGRESS ──────────────────────────────────────────────────────────────────
-function getExerciseStats(exName) {
-  return S.sessions
-    .filter(s => s.exercises.some(e => e.name === exName))
-    .sort((a,b) => new Date(a.date) - new Date(b.date)) // oldest → newest for chart
-    .map(sess => {
-      const ex = sess.exercises.find(e => e.name === exName);
-      const validSets = ex.sets.filter(s => s.w > 0 || s.r > 0);
-      const volume = validSets.reduce((sum, s) => sum + (s.w||0)*(s.r||0), 0);
-      const maxW = sessMaxW(validSets);
-      const heavySets = validSets.filter(s => s.w === maxW && s.r > 0);
-      const avgReps = heavySets.length
-        ? Math.round(heavySets.reduce((a,s)=>a+s.r,0)/heavySets.length) : 0;
-      const est1RM = isCore(exName) ? 0 : validSets.reduce((best, s) => {
-        const rm = s.w > 0 && s.r > 0 ? epley1RM(s.w, s.r) : 0;
-        return Math.max(best, rm);
-      }, 0);
-      return {
-        date: sess.date,
-        volume,
-        maxW,
-        avgReps,
-        est1RM: Math.round(est1RM * 10) / 10,
-        totalSets: validSets.length
-      };
-    });
-}
-
-function makeSvgSparkline(values, color) {
-  if (values.length < 2) return '';
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
-  const W = 200, H = 48, PAD = 6;
-  const gradId = 'sg' + Math.abs(color.split('').reduce((a,c)=>a+c.charCodeAt(0),0));
-  const pts = values.map((v, i) => {
-    const x = PAD + (i / (values.length - 1)) * (W - PAD * 2);
-    const y = H - PAD - ((v - min) / range) * (H - PAD * 2);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
-  const polyPts = pts.join(' ');
-  const areaFirst = `${PAD},${H - PAD}`;
-  const areaLast = `${(PAD + (W - PAD * 2)).toFixed(1)},${H - PAD}`;
-  const lastPt = pts[pts.length - 1].split(',');
-  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:48px;display:block">
-    <defs>
-      <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="${color}" stop-opacity="0.35"/>
-        <stop offset="100%" stop-color="${color}" stop-opacity="0.03"/>
-      </linearGradient>
-    </defs>
-    <polygon points="${areaFirst} ${polyPts} ${areaLast}" fill="url(#${gradId})"/>
-    <polyline points="${polyPts}" fill="none" stroke="${color}" stroke-width="2"
-      stroke-linejoin="round" stroke-linecap="round"/>
-    <circle cx="${lastPt[0]}" cy="${lastPt[1]}" r="3.5" fill="${color}"/>
-  </svg>`;
-}
-
-function renderProgress() {
-  const exercisesWithHistory = ALL_EXERCISES.filter(name =>
-    S.sessions.some(s => s.exercises.some(e =>
-      e.name === name && e.sets.some(st => st.w > 0 || st.r > 0)
-    ))
-  );
-
-  if (!exercisesWithHistory.length) {
-    return `<div class="screen-inner">
-      <div class="page-hdr"><div class="page-title">📈 Progress</div></div>
-      <div style="color:#475569;text-align:center;padding:40px">Complete a workout to see your progress</div>
-    </div>`;
+window.confirmClearData=function(){
+  if(confirm('Clear ALL data? This cannot be undone.')){
+    S.sessions=JSON.parse(JSON.stringify(SEED_SESSIONS));
+    S.customRoutines={};
+    S.routinePointer=6;
+    persist();render();
   }
-
-  const cats = {upper:'Upper Body', lower:'Lower Body', core:'Core'};
-
-  const cardsHTML = Object.entries(cats).map(([cat, catLabel]) => {
-    const exInCat = exercisesWithHistory.filter(n => cfg(n).cat === cat);
-    if (!exInCat.length) return '';
-
-    return `<div class="section-title">${catLabel}</div>` + exInCat.map(name => {
-      const c = cfg(name);
-      const stats = getExerciseStats(name);
-      if (!stats.length) return '';
-      const isOpen = S.progressOpen[name];
-      const last = stats[stats.length - 1];
-
-      // Trend: compare last to avg of previous 1-3 sessions
-      let trendIcon = '→', trendCls = 'trend-neutral';
-      if (stats.length >= 2) {
-        const prior = stats.slice(-4, -1);
-        const priorKey = d => isCore(name) ? d.volume : d.est1RM;
-        const priorAvg = prior.length
-          ? prior.reduce((s,d)=>s+priorKey(d),0)/prior.length : 0;
-        const lastVal = isCore(name) ? last.volume : last.est1RM;
-        if (priorAvg > 0) {
-          const pct = (lastVal - priorAvg) / priorAvg;
-          if (pct > 0.02) { trendIcon = '↑'; trendCls = 'trend-up'; }
-          else if (pct < -0.02) { trendIcon = '↓'; trendCls = 'trend-down'; }
-        }
-      }
-
-      const summaryText = isCore(name)
-        ? `${last.totalSets} sets · Vol ${last.volume}`
-        : `${last.maxW} lbs · est. 1RM ~${last.est1RM} lbs`;
-
-      let expandedHTML = '';
-      if (isOpen) {
-        const recent5 = stats.slice(-5);
-        const avgVol = Math.round(recent5.reduce((s,d)=>s+d.volume,0)/recent5.length);
-        const avg1RM = Math.round(recent5.reduce((s,d)=>s+d.est1RM,0)/recent5.length * 10)/10;
-        const peakEst1RM = isCore(name) ? 0 : Math.max(...stats.map(d=>d.est1RM));
-        const peakVol = Math.max(...stats.map(d=>d.volume));
-
-        const sparkValues = stats.map(d => isCore(name) ? d.volume : d.est1RM);
-        const sparkline = makeSvgSparkline(sparkValues, c.color);
-
-        const recentRows = stats.slice(-8).reverse().map(d => `
-          <div style="display:flex;gap:6px;align-items:center;padding:5px 0;border-bottom:1px solid #1e2a3a;font-size:.77rem">
-            <span style="color:#475569;min-width:64px;flex-shrink:0">${fmtDate(d.date).replace(/[A-Za-z]+,\s/,'')}</span>
-            ${isCore(name)
-              ? `<span style="color:#94a3b8;flex:1">${d.totalSets} sets</span>`
-              : `<span style="color:#94a3b8;flex:1">${d.maxW} lbs × ${d.avgReps} reps</span>
-                 <span style="color:#64748b;margin-right:4px">~${d.est1RM}</span>`}
-            <span style="color:#6366f1">Vol&nbsp;${d.volume}</span>
-          </div>`).join('');
-
-        expandedHTML = `<div class="prog-detail-body">
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px">
-            ${isCore(name) ? `
-              <div class="prog-metric"><div class="pm-val">${last.avgReps}</div><div class="pm-lbl">Last Avg Reps</div></div>
-              <div class="prog-metric"><div class="pm-val">${last.volume}</div><div class="pm-lbl">Last Volume</div></div>
-              <div class="prog-metric"><div class="pm-val">${peakVol}</div><div class="pm-lbl">Peak Volume</div></div>
-            ` : `
-              <div class="prog-metric"><div class="pm-val">${last.maxW}</div><div class="pm-lbl">Weight (lbs)</div></div>
-              <div class="prog-metric"><div class="pm-val">${last.est1RM}</div><div class="pm-lbl">Est. 1RM</div></div>
-              <div class="prog-metric"><div class="pm-val">${peakEst1RM}</div><div class="pm-lbl">Peak 1RM</div></div>
-            `}
-          </div>
-          ${sparkline ? `<div style="margin-bottom:12px">
-            <div style="font-size:.7rem;color:#475569;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">${isCore(name)?'Volume':'Est. 1RM'} progression</div>
-            <div style="background:#0f0f1a;border-radius:8px;padding:6px 8px">${sparkline}</div>
-          </div>` : ''}
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">
-            <div class="prog-metric"><div class="pm-val">${avgVol}</div><div class="pm-lbl">Avg Vol/Session (×5)</div></div>
-            ${isCore(name)
-              ? `<div class="prog-metric"><div class="pm-val">${stats.length}</div><div class="pm-lbl">Total Sessions</div></div>`
-              : `<div class="prog-metric"><div class="pm-val">${avg1RM}</div><div class="pm-lbl">Avg 1RM (×5)</div></div>`}
-          </div>
-          <div style="font-size:.7rem;color:#475569;margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em">Recent Sessions</div>
-          ${recentRows}
-          <div style="font-size:.72rem;color:#475569;margin-top:8px;text-align:center">${stats.length} sessions total</div>
-        </div>`;
-      }
-
-      return `<div class="ex-card">
-        <div class="ex-card-hdr${isOpen?' open':''}" style="--c:${c.color}"
-          onclick="toggleProgress('${name.replace(/'/g,"\\'")}')">
-          <span style="font-size:1.1rem">${c.icon}</span>
-          <div style="flex:1;min-width:0">
-            <div class="ex-name">${name}</div>
-            <div class="ex-sug">${summaryText}</div>
-          </div>
-          <span class="${trendCls}" style="font-size:1.15rem;font-weight:700;margin-right:6px">${trendIcon}</span>
-          <span class="chev">▾</span>
-        </div>
-        ${isOpen ? `<div class="ex-card-body open">${expandedHTML}</div>` : ''}
-      </div>`;
-    }).join('');
-  }).join('');
-
-  return `<div class="screen-inner">
-    <div class="page-hdr">
-      <div class="page-title">📈 Progress</div>
-      <span style="color:#64748b;font-size:.82rem">${exercisesWithHistory.length} exercises</span>
-    </div>
-    ${cardsHTML}
-  </div>`;
 }
 
-function toggleProgress(name) {
-  S.progressOpen[name] = !S.progressOpen[name];
-  render();
-}
-
-// ── INIT ──────────────────────────────────────────────────────────────────────
-loadFromStorage();
+// ── Init ───────────────────────────────────────────────────────────────────
+load();
 render();
 </script>
 </body>
