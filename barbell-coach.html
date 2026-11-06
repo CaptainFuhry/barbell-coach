@@ -81,6 +81,9 @@ input:focus{outline:2px solid var(--accent)}
 .stat-box .val{font-size:22px;font-weight:700}
 .stat-box .lbl{font-size:11px;color:var(--muted);margin-top:2px}
 .empty{text-align:center;color:var(--muted);padding:32px 16px;font-size:14px}
+.note-input{width:100%;margin:0 0 8px;padding:6px 10px;font-size:13px}
+.note-text{font-size:12px;color:var(--muted);margin:-2px 0 6px 34px}
+.swap-panel{background:var(--surface2);border-radius:8px;padding:8px;margin-top:8px}
 @media(prefers-color-scheme:dark){body{color:var(--text)}}
 </style>
 </head>
@@ -88,9 +91,12 @@ input:focus{outline:2px solid var(--accent)}
 <div id="app"></div>
 <script>
 // ── Constants ──────────────────────────────────────────────────────────────
-const REST_SEC = 60;
-const OVERLOAD_SESSIONS = 2;
+const APP_VERSION = 4;          // routine/data migration version
+const REST_SEC = 60;            // default rest for accessories
+const OVERLOAD_SESSIONS = 2;    // qualifying sessions needed AT THE CURRENT WEIGHT before increasing
 const LOOK_BACK = 5;
+const STALL_SESSIONS = 3;       // misses in a row at the same weight before an automatic reset
+const RESET_PCT = 0.10;         // reset drops the weight ~10% (rounded to 5 lb)
 
 const EXERCISE_CFG = {
   'Barbell Bench Press':         {icon:'🏋️',cat:'upper',inc:5,color:'#ef4444',muscles:'Chest'},
@@ -114,32 +120,146 @@ const EXERCISE_CFG = {
   'Barbell Sumo Deadlift':       {icon:'🏆',cat:'lower',inc:5,color:'#fde68a',muscles:'Glutes · Hamstrings'},
   'Core':                        {icon:'⭕',cat:'core', inc:0, color:'#818cf8',muscles:'Core · Hip Flexors'},
   'Plank':                       {icon:'🧱',cat:'core', inc:0, color:'#6366f1',muscles:'Core'},
+  // ── v3 additions (back-friendly) ──
+  'Face Pull':                   {icon:'🎯',cat:'daily',inc:5,color:'#14b8a6',muscles:'Rear Delts · Upper Back',rest:60},
+  'Chest-Supported Row':         {icon:'🛡️',cat:'upper',inc:5,color:'#0891b2',muscles:'Upper Back · Lats (DB per hand)'},
+  'Goblet Squat':                {icon:'🏺',cat:'lower',inc:5,color:'#10b981',muscles:'Quads · Glutes (no bar on back)'},
+  'Bulgarian Split Squat':       {icon:'🦿',cat:'lower',inc:5,color:'#059669',muscles:'Quads · Glutes (DB per hand)'},
+  'Dumbbell Lateral Raise':      {icon:'🪽',cat:'upper',inc:5,color:'#8b5cf6',muscles:'Side Delts (DB per hand)'},
 };
 
+// Add-reps-before-weight ("double progression") for lifts where a 5 lb jump is a big %.
+// Work up to the top of the range on every set, then add 5 lb and start back at the bottom.
+const REP_RANGES = {
+  'Barbell Overhead Press':[8,10],
+  'Barbell Bicep Curl':[10,12],
+  'Barbell Skull Crushers':[10,12],
+  'Face Pull':[15,20],
+  'Dumbbell Lateral Raise':[12,15],
+};
+
+// Rest by exercise (seconds). Heavy compounds get longer rest; everything else uses REST_SEC.
+const REST_LONG = 120, REST_MED = 90;
+['Barbell Back Squat','Barbell Front Squat','Barbell Bench Press','Barbell Bent Over Row','Romanian Deadlift',
+ 'Barbell Deadlift','Barbell Sumo Deadlift','Barbell Overhead Press'].forEach(n=>{EXERCISE_CFG[n].rest=REST_LONG;});
+['Incline Barbell Bench Press','Close Grip Bench Press','Barbell Hip Thrust','Lat Pulldown','Chest-Supported Row',
+ 'Goblet Squat','Bulgarian Split Squat','Barbell Lunges','Barbell Good Morning','Pullup'].forEach(n=>{EXERCISE_CFG[n].rest=REST_MED;});
+function restFor(name){return EXERCISE_CFG[name]?.rest||REST_SEC;}
+
+// Starting weights for exercises with no history (estimated from current lifts as of 11/3)
+const STARTING_WEIGHTS = {
+  'Face Pull':30,                  // cable stack, light — posture work, not a strength lift
+  'Chest-Supported Row':45,        // per hand, incline bench face-down
+  'Goblet Squat':60,               // one DB held at chest
+  'Bulgarian Split Squat':30,      // per hand
+  'Dumbbell Lateral Raise':15,     // per hand — strict, no swinging
+  'Barbell Front Squat':155,       // ~70% of 230 back squat
+  'Barbell Lunges':95,
+  'Barbell Deadlift':225,
+  'Barbell Sumo Deadlift':225,
+  'Barbell Good Morning':95,
+  'Barbell Shrug':185,
+  'Barbell Upright Row':75,
+  'Pullup':0,
+  'Plank':0,
+};
+
+// Swap options shown in a workout (same movement pattern)
+const ALTERNATIVES = {
+  'Barbell Back Squat':['Goblet Squat','Bulgarian Split Squat','Barbell Front Squat','Barbell Lunges'],
+  'Barbell Bent Over Row':['Chest-Supported Row'],
+  'Chest-Supported Row':['Barbell Bent Over Row'],
+  'Barbell Bench Press':['Close Grip Bench Press','Incline Barbell Bench Press'],
+  'Incline Barbell Bench Press':['Barbell Bench Press'],
+  'Romanian Deadlift':['Barbell Hip Thrust','Barbell Good Morning'],
+  'Lat Pulldown':['Pullup'],
+  'Barbell Skull Crushers':['Close Grip Bench Press'],
+};
+
+// v4 order: legs / push / pull alternate, and the three spine-loading lifts
+// (Squat, Barbell Row, RDL) sit 4 slots apart so a session rarely gets more than two.
 const DEFAULT_ROUTINE = [
-  {name:'Barbell Back Squat',          sets:3, targetReps:8},
-  {name:'Barbell Bench Press',         sets:3, targetReps:8},
-  {name:'Incline Barbell Bench Press', sets:3, targetReps:8},
-  {name:'Barbell Overhead Press',      sets:3, targetReps:8},
-  {name:'Romanian Deadlift',           sets:3, targetReps:10},
-  {name:'Barbell Hip Thrust',          sets:3, targetReps:10},
-  {name:'Lat Pulldown',                sets:3, targetReps:8},
-  {name:'Barbell Bent Over Row',       sets:3, targetReps:8},
-  {name:'Close Grip Bench Press',      sets:2, targetReps:10},
-  {name:'Barbell Skull Crushers',      sets:3, targetReps:10},
-  {name:'Barbell Bicep Curl',          sets:2, targetReps:10},
-  {name:'Core',                        sets:3, targetReps:'8-10'},
+  {name:'Barbell Back Squat',          sets:3, targetReps:8},     // legs (spine)
+  {name:'Barbell Bench Press',         sets:3, targetReps:8},     // push
+  {name:'Lat Pulldown',                sets:3, targetReps:8},     // pull
+  {name:'Barbell Overhead Press',      sets:3, targetReps:'8-10'},// push
+  {name:'Barbell Bent Over Row',       sets:3, targetReps:8},     // pull (spine)
+  {name:'Barbell Hip Thrust',          sets:3, targetReps:10},    // legs
+  {name:'Incline Barbell Bench Press', sets:3, targetReps:8},     // push
+  {name:'Chest-Supported Row',         sets:3, targetReps:10},    // pull
+  {name:'Romanian Deadlift',           sets:3, targetReps:10},    // legs (spine)
+  {name:'Barbell Skull Crushers',      sets:3, targetReps:'10-12'},// push (arms)
+  {name:'Barbell Bicep Curl',          sets:2, targetReps:'10-12'},// pull (arms)
+  {name:'Dumbbell Lateral Raise',      sets:2, targetReps:'12-15'},// side delts
+  {name:'Core',                        sets:3, targetReps:'8-10'},  // every session
+  {name:'Face Pull',                   sets:3, targetReps:'15-20'}, // every session
 ];
+// v3 rotation order (non-core), used to keep your place in the rotation when upgrading
+const V3_ORDER=['Barbell Back Squat','Barbell Bench Press','Incline Barbell Bench Press','Barbell Overhead Press',
+  'Romanian Deadlift','Barbell Hip Thrust','Lat Pulldown','Barbell Bent Over Row','Chest-Supported Row',
+  'Barbell Skull Crushers','Barbell Bicep Curl'];
+
+// v4: reorder a custom routine that has the standard lifts, add lateral raises, set rep ranges
+function migrateRoutineV4(r){
+  if(!Array.isArray(r)||!r.length) return r;
+  const order=DEFAULT_ROUTINE.map(x=>x.name);
+  const names=new Set(r.map(x=>x.name));
+  if(!names.has('Dumbbell Lateral Raise')) r=[...r,{name:'Dumbbell Lateral Raise',sets:2,targetReps:'12-15'}];
+  r=r.map(x=>REP_RANGES[x.name]?{...x,targetReps:REP_RANGES[x.name].join('-')}:x);
+  const known=r.filter(x=>order.includes(x.name)).sort((a,b)=>order.indexOf(a.name)-order.indexOf(b.name));
+  const extra=r.filter(x=>!order.includes(x.name)); // your own additions stay, after the standard lifts
+  const core=known.filter(x=>isCore(x.name)), lifts=known.filter(x=>!isCore(x.name));
+  return [...lifts,...extra.filter(x=>!isCore(x.name)),...core,...extra.filter(x=>isCore(x.name))];
+}
+// Keep "what's next" the same when the rotation order changes
+function remapPointer(oldNames,newNames,ptr){
+  if(!oldNames.length||!newNames.length) return ptr;
+  const p=(ptr??-1);
+  for(let k=1;k<=oldNames.length;k++){
+    const next=oldNames[(p+k+oldNames.length)%oldNames.length];
+    const idx=newNames.indexOf(next);
+    if(idx!==-1) return (idx-1+newNames.length)%newNames.length;
+  }
+  return ptr;
+}
+
+// Upgrade a saved/imported custom routine to v3 (keeps positions so the rotation pointer stays valid)
+function migrateRoutine(r){
+  if(!Array.isArray(r)||!r.length) return r;
+  r=r.map(x=>x.name==='Close Grip Bench Press'?{name:'Chest-Supported Row',sets:3,targetReps:10}:x);
+  if(!r.some(x=>x.name==='Face Pull')) r.push({name:'Face Pull',sets:3,targetReps:15});
+  return r;
+}
+
+// Make sessions from any export (this app, or the older Monday/Friday app) usable
+function normalizeSessions(list){
+  if(!Array.isArray(list)) return [];
+  const seen=new Set(), out=[];
+  list.forEach(s=>{
+    if(!s||!s.date||!Array.isArray(s.exercises)) return;
+    const id=s.id||('s'+Date.parse(s.date)+Math.random().toString(36).slice(2,6));
+    if(seen.has(id)) return; seen.add(id);
+    out.push({...s,id,notes:s.notes||'',exercises:s.exercises.map(e=>({
+      ...e,
+      targetSets:e.targetSets||(e.sets||[]).length||3,
+      targetReps:e.targetReps??8,
+      sets:(e.sets||[]).map(st=>({w:Number(st.w)||0,r:Number(st.r)||0,n:st.n||'',
+        done:st.done===undefined?(Number(st.r)>0):!!st.done,isPR:!!st.isPR})),
+    }))});
+  });
+  return out.sort((a,b)=>a.date.localeCompare(b.date)||(a.startTime||0)-(b.startTime||0));
+}
 
 const MUSCLE_GROUP_MAP = {
   'Chest':      ['Barbell Bench Press','Incline Barbell Bench Press','Close Grip Bench Press'],
-  'Back':       ['Barbell Bent Over Row','Lat Pulldown','Pullup','Barbell Upright Row','Barbell Deadlift','Barbell Sumo Deadlift'],
-  'Shoulders':  ['Barbell Overhead Press','Barbell Upright Row'],
+  'Back':       ['Barbell Bent Over Row','Chest-Supported Row','Lat Pulldown','Pullup','Barbell Deadlift','Barbell Sumo Deadlift'],
+  'Upper Back': ['Face Pull','Chest-Supported Row','Barbell Bent Over Row','Barbell Shrug'],
+  'Shoulders':  ['Barbell Overhead Press','Barbell Upright Row','Dumbbell Lateral Raise'],
   'Triceps':    ['Barbell Skull Crushers','Close Grip Bench Press'],
-  'Biceps':     ['Barbell Bicep Curl','Barbell Bent Over Row','Lat Pulldown','Pullup'],
-  'Quads':      ['Barbell Back Squat','Barbell Front Squat','Barbell Lunges'],
+  'Biceps':     ['Barbell Bicep Curl','Barbell Bent Over Row','Chest-Supported Row','Lat Pulldown','Pullup'],
+  'Quads':      ['Barbell Back Squat','Barbell Front Squat','Barbell Lunges','Goblet Squat','Bulgarian Split Squat'],
   'Hamstrings': ['Romanian Deadlift','Barbell Good Morning','Barbell Deadlift','Barbell Sumo Deadlift'],
-  'Glutes':     ['Barbell Hip Thrust','Barbell Back Squat','Romanian Deadlift','Barbell Lunges','Barbell Sumo Deadlift'],
+  'Glutes':     ['Barbell Hip Thrust','Barbell Back Squat','Romanian Deadlift','Barbell Lunges','Barbell Sumo Deadlift','Goblet Squat','Bulgarian Split Squat'],
   'Core':       ['Core','Plank'],
 };
 
@@ -496,7 +616,7 @@ let S = {
   wkPhase:'idle',
   wkSession:null,
   wkStart:0,
-  routinePointer:6, // Lat Pulldown = nonCore[6], last done 2026-11-03
+  routinePointer:null, // set by initialPointer() at startup
   timerActive:false,
   timerSec:0,
   timerTotal:REST_SEC,
@@ -512,7 +632,30 @@ let S = {
   addExSearch:'',
   settingsRoutineEdit:false,
   elapsedInterval:null,
+  noteOpen:{},
+  swapOpen:null,
+  routineVersion:APP_VERSION,
 };
+
+// Apply v3 routine changes to a saved/imported custom routine (once)
+function applyMigrations(fromVersion){
+  const v=fromVersion||2;
+  if(v<3 && S.customRoutines?.default){
+    S.customRoutines.default=migrateRoutine(S.customRoutines.default);
+  }
+  if(v<4){
+    const oldNonCore=(S.customRoutines?.default?.length?S.customRoutines.default.filter(x=>!isCore(x.name)).map(x=>x.name):V3_ORDER);
+    if(S.customRoutines?.default?.length) S.customRoutines.default=migrateRoutineV4(S.customRoutines.default);
+    const newNonCore=getCurrentRoutine().filter(x=>!isCore(x.name)).map(x=>x.name);
+    S.routinePointer=remapPointer(oldNonCore,newNonCore,S.routinePointer);
+  }
+  S.routineVersion=APP_VERSION;
+}
+// Fresh install: seed history ends 11/3 after Lat Pulldown, so the next lift is Barbell Bent Over Row
+function initialPointer(){
+  const nc=DEFAULT_ROUTINE.filter(x=>!isCore(x.name)).map(x=>x.name);
+  return (nc.indexOf('Barbell Bent Over Row')-1+nc.length)%nc.length;
+}
 
 // ── Persistence ────────────────────────────────────────────────────────────
 function lsOk(){try{localStorage.setItem('__t','1');localStorage.removeItem('__t');return true;}catch(e){return false;}}
@@ -523,6 +666,7 @@ function persist(){
     sessions:S.sessions,
     customRoutines:S.customRoutines,
     routinePointer:S.routinePointer,
+    routineVersion:S.routineVersion,
   }));
 }
 
@@ -532,14 +676,18 @@ function load(){
     const raw=localStorage.getItem('barbell-coach-v2');
     if(!raw) return;
     const d=JSON.parse(raw);
-    if(d.sessions) S.sessions=d.sessions;
+    if(d.sessions) S.sessions=normalizeSessions(d.sessions);
     if(d.customRoutines) S.customRoutines=d.customRoutines;
     if(d.routinePointer!==undefined) S.routinePointer=d.routinePointer;
+    applyMigrations(d.routineVersion);
+    persist();
   }catch(e){}
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-function isCore(name){return (EXERCISE_CFG[name]?.cat==='core');}
+// "Always" exercises (Core + Face Pull) are done every session and sit outside the rotation
+function isCore(name){const c=EXERCISE_CFG[name]?.cat;return c==='core'||c==='daily';}
+function isCoreOnly(name){return EXERCISE_CFG[name]?.cat==='core';}
 
 function getCurrentRoutine(){
   const cr=S.customRoutines?.default;
@@ -549,33 +697,58 @@ function getCurrentRoutine(){
 function epley(w,r){return r>1?Math.round(w*(1+r/30)):w;}
 
 function getSuggestion(name){
+  const cfg=EXERCISE_CFG[name]||{};
+  const routine=getCurrentRoutine().find(r=>r.name===name);
+  const range=REP_RANGES[name];
+  const target=range?range[0]:(parseInt(routine?.targetReps)||8);
   const hist=S.sessions.map(s=>{
     const ex=s.exercises?.find(e=>e.name===name);
     if(!ex) return null;
     const doneSets=ex.sets.filter(st=>st.done&&st.r>0);
     if(!doneSets.length) return null;
     const maxW=Math.max(...doneSets.map(st=>st.w));
-    const setsAtMax=doneSets.filter(st=>st.w===maxW);
-    const minReps=Math.min(...setsAtMax.map(st=>st.r));
-    const maxReps=Math.max(...setsAtMax.map(st=>st.r));
-    const allDone=(doneSets.length>=ex.targetSets);
-    const targetReps=Number(ex.targetReps)||8;
-    const qualifies=allDone&&setsAtMax.length>=ex.targetSets&&minReps>=targetReps;
-    const best1rm=Math.max(...doneSets.map(st=>epley(st.w,st.r)));
-    return {w:maxW,minReps,maxReps,qualifies,best1rm,date:s.date};
+    const atMax=doneSets.filter(st=>st.w===maxW).map(st=>st.r);
+    const tSets=ex.targetSets||doneSets.length;
+    const full=atMax.length>=tSets;            // every planned set done at the top weight
+    const minReps=Math.min(...atMax);
+    return {w:maxW,minReps,full,date:s.date};
   }).filter(Boolean);
-  if(!hist.length) return {weight:0,reps:'',note:'No history'};
-  const recent=hist.slice(-LOOK_BACK);
-  const qualCount=recent.filter(h=>h.qualifies).length;
-  const last=hist[hist.length-1];
-  const cfg=EXERCISE_CFG[name]||{};
-  const inc=cfg.inc||5;
-  const routine=getCurrentRoutine().find(r=>r.name===name);
-  const targetReps=Number(routine?.targetReps)||8;
-  if(qualCount>=OVERLOAD_SESSIONS){
-    return {weight:last.w+inc,reps:targetReps,note:`Increase! (${qualCount} qualifying recent sessions)`};
+
+  if(!hist.length){
+    const sw=STARTING_WEIGHTS[name];
+    const reps=range?range[0]:target;
+    if(sw!==undefined) return {weight:sw,reps,note:sw?`Starting estimate — adjust if it feels too easy/hard`:'Bodyweight / reps focus'};
+    return {weight:0,reps:'',note:'No history'};
   }
-  return {weight:last.w,reps:targetReps,note:`Maintain ${last.w}lb`};
+  const last=hist[hist.length-1];
+  const inc=cfg.inc||0;
+  if(!inc) return {weight:last.w,reps:target,note:'Bodyweight / reps focus'};
+
+  // Sessions in a row (most recent backwards) at the current weight
+  const streak=[];
+  for(let i=hist.length-1;i>=0&&hist[i].w===last.w;i--) streak.unshift(hist[i]);
+  const meetsMin=h=>h.full&&h.minReps>=target;      // hit the minimum on every set
+  const lastN=streak.slice(-STALL_SESSIONS);
+  const stalled=lastN.length>=STALL_SESSIONS&&lastN.every(h=>!meetsMin(h));
+  const resetW=Math.max(inc,Math.round(last.w*(1-RESET_PCT)/5)*5);
+
+  if(range){
+    const [lo,hi]=range;
+    if(last.full&&last.minReps>=hi)
+      return {weight:last.w+inc,reps:lo,note:`Increase! Hit ${hi}+ on every set at ${last.w}lb — start back at ${lo} reps`};
+    if(stalled)
+      return {weight:resetW,reps:lo,note:`Reset: ${STALL_SESSIONS} sessions in a row under ${lo} reps at ${last.w}lb. Build back up from ${resetW}lb.`};
+    const aim=Math.min(hi,Math.max(lo,(last.full?last.minReps:lo)+1));
+    return {weight:last.w,reps:aim,note:`Stay at ${last.w}lb — aim for ${aim} reps per set. Add 5 lb once every set hits ${hi}.`};
+  }
+
+  const qualCount=streak.slice(-LOOK_BACK).filter(meetsMin).length;
+  if(qualCount>=OVERLOAD_SESSIONS)
+    return {weight:last.w+inc,reps:target,note:`Increase! Hit all reps ${qualCount}× at ${last.w}lb`};
+  if(stalled)
+    return {weight:resetW,reps:target,note:`Reset: ${STALL_SESSIONS} sessions in a row missing reps at ${last.w}lb. Build back up from ${resetW}lb.`};
+  const need=OVERLOAD_SESSIONS-qualCount;
+  return {weight:last.w,reps:target,note:`Stay at ${last.w}lb — ${qualCount}/${OVERLOAD_SESSIONS} sessions with all reps (${need} more to go up). Leave 1–2 reps in the tank.`};
 }
 
 function getWeekSessions(){
@@ -604,6 +777,9 @@ function fmtDate(d){
   const dt=new Date(d+'T12:00:00');
   return dt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
 }
+
+function escHtml(t){return String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function escAttr(t){return escHtml(t);}
 
 function fmtSec(s){const m=Math.floor(s/60),r=s%60;return `${m}:${r.toString().padStart(2,'0')}`;}
 
@@ -682,8 +858,8 @@ function cancelWorkout(){
 function startTimer(exName){
   if(S.timerInterval){clearInterval(S.timerInterval);S.timerInterval=null;}
   S.timerActive=true;
-  S.timerSec=REST_SEC;
-  S.timerTotal=REST_SEC;
+  S.timerSec=restFor(exName);
+  S.timerTotal=restFor(exName);
   S.timerEx=exName;
   S.timerInterval=setInterval(()=>{
     S.timerSec--;
@@ -761,7 +937,7 @@ function renderNav(){
 function renderHome(){
   if(S.wkPhase==='active') return renderWorkout();
   const mg=getMuscleGroupsThisWeek();
-  const rec={Chest:3,Back:3,Shoulders:2,Triceps:2,Biceps:2,Quads:2,Hamstrings:2,Glutes:2,Core:4};
+  const rec={Chest:3,Back:3,'Upper Back':4,Shoulders:2,Triceps:2,Biceps:2,Quads:2,Hamstrings:2,Glutes:2,Core:4};
   const weekSes=getWeekSessions();
   const routine=getCurrentRoutine();
   const nonCore=routine.filter(r=>!isCore(r.name));
@@ -785,7 +961,7 @@ function renderHome(){
       <span style="color:var(--muted);font-size:12px;width:18px;text-align:right">${i+1}</span>
       <span>${cfg.icon||'🏋️'}</span>
       <span style="font-size:13px;font-weight:600">${item.name}</span>
-      ${isCore(item.name)?'<span class="tag" style="background:#818cf820;color:#818cf8">Core</span>':''}
+      ${isCore(item.name)?`<span class="tag" style="background:#818cf820;color:#818cf8">${isCoreOnly(item.name)?'Core':'Every session'}</span>`:''}
     </div>`;
   });
   if(nextEx.length>6) html+=`<div style="font-size:12px;color:var(--muted);padding-top:6px">+${nextEx.length-6} more…</div>`;
@@ -850,6 +1026,7 @@ function buildExCard(exItem,ei,inWorkout){
       <div style="text-align:center;font-size:11px;color:var(--muted)">REPS</div>
       <div style="text-align:center;font-size:11px;color:var(--muted)">DONE</div>
     </div>`;
+    const notesOn=inWorkout&&S.noteOpen[ei];
     exItem.sets.forEach((set,si)=>{
       const pr=set.isPR?`<span class="pr-badge">PR</span>`:'';
       if(inWorkout){
@@ -861,6 +1038,7 @@ function buildExCard(exItem,ei,inWorkout){
             <button class="${set.done?'done':''}" onclick="toggleSetDone(${ei},${si})">${set.done?'✓':'○'}</button>
           </div>
         </div>`;
+        if(notesOn) html+=`<input type="text" class="note-input" value="${escAttr(set.n)}" placeholder="Set ${si+1} note (e.g. back tight, felt easy)" onchange="setVal(${ei},${si},'n',this.value)">`;
       } else {
         html+=`<div class="set-row">
           <div class="set-num">${si+1}${pr}</div>
@@ -868,14 +1046,26 @@ function buildExCard(exItem,ei,inWorkout){
           <div style="text-align:center;font-size:14px">${set.r||'—'}</div>
           <div style="text-align:center">${set.done?'<span style="color:var(--green)">✓</span>':'<span style="color:var(--muted)">—</span>'}</div>
         </div>`;
+        if(set.n) html+=`<div class="note-text">📝 ${escHtml(set.n)}</div>`;
       }
     });
     if(inWorkout){
-      html+=`<div style="display:flex;gap:6px;margin-top:8px">
+      const alts=(ALTERNATIVES[exItem.name]||[]).filter(n=>EXERCISE_CFG[n]);
+      html+=`<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
         <button class="btn btn-ghost btn-sm" onclick="addSet(${ei})">+ Set</button>
         ${exItem.sets.length>1?`<button class="btn btn-ghost btn-sm" onclick="removeSet(${ei})">- Set</button>`:''}
+        <button class="btn btn-ghost btn-sm" onclick="toggleNotes(${ei})">📝${notesOn?' Hide':''} Notes</button>
+        ${alts.length?`<button class="btn btn-ghost btn-sm" onclick="toggleSwap(${ei})">⇄ Swap</button>`:''}
         <button class="btn btn-sm" style="background:var(--surface2);margin-left:auto;color:var(--red)" onclick="removeExFromWorkout(${ei})">Remove</button>
       </div>`;
+      if(S.swapOpen===ei&&alts.length){
+        html+=`<div class="swap-panel"><div style="font-size:12px;color:var(--muted);margin-bottom:6px">Swap for today only:</div>`;
+        alts.forEach(n=>{
+          const sg=getSuggestion(n);
+          html+=`<button class="btn btn-ghost btn-sm" style="width:100%;justify-content:space-between;margin-bottom:4px" onclick="swapEx(${ei},'${n}')"><span>${EXERCISE_CFG[n].icon} ${n}</span><span style="color:var(--accent)">${sg.weight?sg.weight+'lb':'BW'}</span></button>`;
+        });
+        html+=`</div>`;
+      }
     }
     html+=`</div>`;
   }
@@ -982,7 +1172,7 @@ function renderProgress(){
 function renderSettings(){
   const routine=getCurrentRoutine();
   const customR=S.customRoutines?.default;
-  let html=`<div class="header"><h1>⚙️ Settings</h1></div>`;
+  let html=`<div class="header"><h1>⚙️ Settings</h1><span class="elapsed">v${APP_VERSION}</span></div>`;
   html+=`<div class="section-title">Default Routine (${routine.length} exercises)</div>`;
   html+=`<div class="card">`;
   if(S.settingsRoutineEdit){
@@ -1018,7 +1208,8 @@ function renderSettings(){
   // Available exercises
   html+=`<div class="section-title">All Available Exercises</div><div class="card">`;
   Object.entries(EXERCISE_CFG).forEach(([name,cfg])=>{
-    html+=`<div class="cur-weight-row"><span style="display:flex;align-items:center;gap:6px;font-size:13px">${cfg.icon} ${name}</span><span class="tag" style="background:${cfg.cat==='upper'?'#3b82f620':cfg.cat==='lower'?'#22c55e20':'#818cf820'};color:${cfg.cat==='upper'?'#3b82f6':cfg.cat==='lower'?'#22c55e':'#818cf8'}">${cfg.muscles}</span></div>`;
+    const sg=getSuggestion(name);
+    html+=`<div class="cur-weight-row"><span style="display:flex;align-items:center;gap:6px;font-size:13px">${cfg.icon} ${name} <span style="color:var(--accent);font-weight:700">${sg.weight?sg.weight+'lb':''}</span></span><span class="tag" style="background:${cfg.cat==='upper'?'#3b82f620':cfg.cat==='lower'?'#22c55e20':'#818cf820'};color:${cfg.cat==='upper'?'#3b82f6':cfg.cat==='lower'?'#22c55e':'#818cf8'}">${cfg.muscles}</span></div>`;
   });
   html+=`</div>`;
   // Data
@@ -1084,7 +1275,24 @@ window.toggleHist=function(id){S.histOpen[id]=!S.histOpen[id];render();}
 window.setVal=function(ei,si,field,val){
   if(!S.wkSession) return;
   const set=S.wkSession.exercises[ei].sets[si];
+  if(field==='n'){set.n=String(val||'');return;}
   set[field]=field==='r'?parseInt(val)||0:parseFloat(val)||0;
+}
+window.toggleNotes=function(ei){S.noteOpen[ei]=!S.noteOpen[ei];render();}
+window.toggleSwap=function(ei){S.swapOpen=S.swapOpen===ei?null:ei;render();}
+window.swapEx=function(ei,newName){
+  if(!S.wkSession) return;
+  const old=S.wkSession.exercises[ei];
+  const sug=getSuggestion(newName);
+  const rItem=getCurrentRoutine().find(r=>r.name===newName);
+  const tReps=rItem?.targetReps??(['Goblet Squat','Bulgarian Split Squat','Chest-Supported Row'].includes(newName)?10:old.targetReps);
+  const nSets=old.sets.length;
+  S.wkSession.exercises[ei]={name:newName,targetSets:nSets,targetReps:tReps,
+    sets:Array.from({length:nSets},()=>({w:sug.weight||0,r:0,n:'',done:false,isPR:false})),
+    suggestion:{...sug,reps:tReps},missedLast:false,swappedFrom:old.name};
+  S.exOpen[newName]=true;
+  S.swapOpen=null;
+  render();
 }
 
 window.toggleSetDone=function(ei,si){
@@ -1203,7 +1411,8 @@ window.resetRoutine=function(){
 }
 
 window.exportData=function(){
-  const data=JSON.stringify({sessions:S.sessions,customRoutines:S.customRoutines,routinePointer:S.routinePointer},null,2);
+  const data=JSON.stringify({app:'barbell-coach',routineVersion:S.routineVersion,exported:new Date().toISOString(),
+    sessions:S.sessions,customRoutines:S.customRoutines,routinePointer:S.routinePointer},null,2);
   const a=document.createElement('a');
   a.href='data:application/json,'+encodeURIComponent(data);
   a.download='barbell-coach-'+new Date().toISOString().slice(0,10)+'.json';
@@ -1216,11 +1425,18 @@ window.importData=function(input){
   reader.onload=e=>{
     try{
       const d=JSON.parse(e.target.result);
-      if(d.sessions) S.sessions=d.sessions;
+      const incoming=normalizeSessions(Array.isArray(d)?d:d.sessions);
+      if(!incoming.length){alert('Import failed: no sessions found in file.');return;}
+      // Merge: keep everything already here, add any session from the file that isn't here yet (matched by id)
+      const byId=new Map(S.sessions.map(x=>[x.id,x]));
+      let added=0;
+      incoming.forEach(x=>{if(!byId.has(x.id)){byId.set(x.id,x);added++;}}); // existing sessions are kept as-is
+      S.sessions=normalizeSessions([...byId.values()]);
       if(d.customRoutines) S.customRoutines=d.customRoutines;
       if(d.routinePointer!==undefined) S.routinePointer=d.routinePointer;
+      applyMigrations(d.routineVersion);
       persist();render();
-      alert('Import successful! '+S.sessions.length+' sessions loaded.');
+      alert('Import successful! '+added+' new session(s) added, '+S.sessions.length+' total.');
     }catch(err){alert('Import failed: invalid file.');}
   };
   reader.readAsText(file);
@@ -1230,12 +1446,13 @@ window.confirmClearData=function(){
   if(confirm('Clear ALL data? This cannot be undone.')){
     S.sessions=JSON.parse(JSON.stringify(SEED_SESSIONS));
     S.customRoutines={};
-    S.routinePointer=6;
+    S.routinePointer=initialPointer();
     persist();render();
   }
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────
+if(S.routinePointer===null||S.routinePointer===undefined) S.routinePointer=initialPointer();
 load();
 render();
 </script>
